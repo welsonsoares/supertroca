@@ -453,21 +453,21 @@ footer{background:linear-gradient(120deg,var(--blue) 0%,#0a3d7c 60%,var(--green)
   <div class="scanner-strip">
     <div class="scanner-strip-text">
       <strong>Scanner de Figurinhas</strong>
-      <span>Aponte a câmera para a figurinha e capture o texto. O scanner detecta 3 letras do time e 2 números.</span>
+      <span>EM breve, fase de testes.</span>
       <span id="scannerResultLabel"></span>
     </div>
     <div class="scanner-actions">
-      <button class="btn-scan" onclick="openCamera()">Abrir câmera</button>
-      <button class="btn btn-green btn-sm hidden" id="scannerCaptureBtn" onclick="captureCamera()">Capturar</button>
-      <button class="btn btn-ghost btn-sm hidden" id="scannerStopBtn" onclick="stopCamera()">Fechar câmera</button>
+      <button class="btn-scan" disabled>Em testes</button>
+      <button class="btn btn-green btn-sm hidden" id="scannerCaptureBtn" onclick="captureCamera()" disabled>Capturar</button>
+      <button class="btn btn-ghost btn-sm hidden" id="scannerStopBtn" onclick="stopCamera()" disabled>Fechar câmera</button>
     </div>
     <div id="scannerCamera" class="scanner-camera hidden">
       <video id="scannerVideo" autoplay playsinline muted></video>
       <canvas id="scannerCanvas" class="hidden"></canvas>
     </div>
     <div class="scanner-input-wrap">
-      <textarea id="scannerText" class="scanner-input" placeholder="Ou cole o texto reconhecido aqui..."></textarea>
-      <button class="btn-scan" onclick="scanStickerText()">Scanear</button>
+      <textarea id="scannerText" class="scanner-input" placeholder="Scanner em breve..."></textarea>
+      <button class="btn-scan" onclick="scanStickerText()" disabled>Scanear</button>
     </div>
     <div id="scannerChips" class="scanner-chips"></div>
   </div>
