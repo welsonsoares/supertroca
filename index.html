@@ -89,7 +89,10 @@ header{background:linear-gradient(120deg,var(--blue) 0%,#0a3d7c 50%,var(--green)
 .team-dropdown-menu.hidden{display:none}
 .team-dropdown-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;cursor:pointer;transition:background .2s}
 .team-dropdown-item:hover{background:rgba(0,156,59,.08)}
+.team-dropdown-item.duplicate{color:#b11;background:rgba(229,62,62,.08)}
 .team-dropdown-item input{accent-color:var(--green);}
+.team-dropdown-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;margin-top:10px}
+.dup-count-badge{margin-left:auto;padding:2px 8px;border-radius:999px;background:#d32f2f;color:#fff;font-size:.78rem;font-weight:700;min-width:28px;text-align:center}
 .team-filter-icon{font-size:1rem;display:inline-flex;width:20px;text-align:center;margin-right:10px}
 .brand-mark{display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;margin-right:10px;border-radius:14px;background:var(--green);color:#fff;font-size:.95rem;font-weight:800;box-shadow:0 12px 26px rgba(0,0,0,.18)}
 .field-icon{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;background:rgba(0,156,59,.1);border-radius:8px;font-size:0.95rem;margin-right:8px}
@@ -198,11 +201,13 @@ header{background:linear-gradient(120deg,var(--blue) 0%,#0a3d7c 50%,var(--green)
 .team{margin-bottom:16px;border-radius:16px;border:1px solid rgba(0,0,0,.06);background:#fbfdff;padding:12px}
 .team-title{font-size:.75rem;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;background:rgba(0,39,118,.06);padding:8px 11px;border-radius:999px;color:var(--blue);display:inline-flex;align-items:center;gap:6px;margin-bottom:10px}
 .stickers{display:grid;grid-template-columns:repeat(auto-fit,minmax(58px,1fr));gap:10px}
-.sticker{padding:12px 10px;border-radius:14px;cursor:pointer;font-weight:700;font-size:.92rem;transition:transform .15s,opacity .15s,box-shadow .15s;user-select:none;text-align:center;color:#223248;background:#f5f7fb;border:1px solid rgba(66,153,225,.18);min-height:44px;display:flex;align-items:center;justify-content:center}
+.sticker{padding:12px 10px;border-radius:14px;cursor:pointer;font-weight:700;font-size:.92rem;transition:transform .15s,opacity .15s,box-shadow .15s;user-select:none;text-align:center;color:#223248;background:#f5f7fb;border:1px solid rgba(66,153,225,.18);min-height:44px;display:flex;align-items:center;justify-content:center;position:relative}
 .sticker:hover{transform:translateY(-2px);box-shadow:0 12px 24px rgba(0,0,0,.08)}
 .sticker:active{transform:translateY(0)}
 .sticker.collected{background:#e9f7ef;border:2px solid #7ac27a;color:#1b5e20}
 .sticker.selected{background:var(--blue);color:#fff;border-color:rgba(255,255,255,.9);box-shadow:0 0 0 2px rgba(255,255,255,.55)}
+.sticker.duplicate{background:#fff4f4;border-color:rgba(229,62,62,.2)}
+.dup-badge{position:absolute;top:6px;right:8px;background:#dc2626;color:#fff;font-size:.75rem;font-weight:800;padding:3px 7px;border-radius:999px;line-height:1;box-shadow:0 1px 4px rgba(0,0,0,.12)}
 .floating-add-selected{position:fixed;right:18px;bottom:18px;z-index:1200;box-shadow:0 18px 40px rgba(0,0,0,.18);border-radius:16px;padding:0;}
 .floating-add-selected.hidden{display:none}
 
@@ -436,11 +441,6 @@ footer{background:linear-gradient(120deg,var(--blue) 0%,#0a3d7c 60%,var(--green)
     </div>
   </div>
 
-  <div class="search-wrap">
-    <span class="search-icon">🔍</span>
-    <input id="search" placeholder="Pesquisar seleção (BRA, MEX, CAN, GER, ARG...)">
-  </div>
-
   <div class="main-grid">
     <div class="panel">
       <div class="panel-header">❌ Faltantes<span class="panel-count" id="mc2">0</span></div>
@@ -455,6 +455,14 @@ footer{background:linear-gradient(120deg,var(--blue) 0%,#0a3d7c 60%,var(--green)
     </div>
     <div class="panel">
       <div class="panel-header">🔄 Repetidas<span class="panel-count" id="dc2">0</span></div>
+      <div class="team-filter-wrap" style="margin-bottom:18px;">
+        <label for="dupFilterBtn">Filtrar times com repetidas</label>
+        <div class="team-dropdown">
+          <button id="dupFilterBtn" type="button" class="team-dropdown-toggle" onclick="toggleTeamFilterMenu('duplicate')">Todos os times ▾</button>
+          <div id="dupFilterMenu" class="team-dropdown-menu hidden"></div>
+        </div>
+      </div>
+      
       <div id="duplicates"></div>
       <div class="add-form">
         <button class="btn btn-green btn-sm" onclick="openAddDupModal()">+ Adicionar repetidas</button>
@@ -556,9 +564,39 @@ let currentTradeSticker = null;
 let currentAddDupTeam = null;
 let currentAddDupNumber = null;
 let selectedMissing = new Set();
-let selectedTeamFilters = new Set(['MEX']);
-let pendingTeamFilters = new Set(selectedTeamFilters);
+let selectedMissingTeamFilters = new Set(ALL_TEAMS);
+let pendingMissingTeamFilters = new Set(selectedMissingTeamFilters);
+let selectedDuplicateTeamFilters = new Set(ALL_TEAMS);
+let pendingDuplicateTeamFilters = new Set(selectedDuplicateTeamFilters);
 let pendingDupSelections = {};
+
+function loadFilterSet(key, defaultTeams) {
+  const saved = localStorage.getItem(key);
+  if (!saved) return new Set(defaultTeams);
+  try {
+    const arr = JSON.parse(saved);
+    return Array.isArray(arr) ? new Set(arr) : new Set(defaultTeams);
+  } catch {
+    return new Set(defaultTeams);
+  }
+}
+
+function saveFilterSet(key, filterSet) {
+  localStorage.setItem(key, JSON.stringify([...filterSet]));
+}
+
+function loadTeamFilters() {
+  selectedMissingTeamFilters = loadFilterSet('missingTeamFilters', ALL_TEAMS);
+  pendingMissingTeamFilters = new Set(selectedMissingTeamFilters);
+  selectedDuplicateTeamFilters = loadFilterSet('duplicateTeamFilters', ALL_TEAMS);
+  pendingDuplicateTeamFilters = new Set(selectedDuplicateTeamFilters);
+}
+
+function saveTeamFilter(filterType) {
+  const key = filterType === 'duplicate' ? 'duplicateTeamFilters' : 'missingTeamFilters';
+  const selected = filterType === 'duplicate' ? selectedDuplicateTeamFilters : selectedMissingTeamFilters;
+  saveFilterSet(key, selected);
+}
 
 function generateCleanMissing() {
   const cleanObj = {};
@@ -598,9 +636,11 @@ if (!missing) {
    INIT
 ═══════════════════════════════════════════ */
 window.addEventListener('DOMContentLoaded', () => {
+  loadTeamFilters();
   document.getElementById('lblTotal').textContent = TOTAL;
   populateTradeSelect();
-  populateTeamFilter();
+  populateTeamFilter('missing');
+  populateTeamFilter('duplicate');
   if (collectorName) {
     document.getElementById('overlay').classList.add('hidden');
     applyName(collectorName);
@@ -610,11 +650,11 @@ window.addEventListener('DOMContentLoaded', () => {
     ni.focus();
     ni.addEventListener('keydown', e => { if(e.key==='Enter') startApp(); });
   }
-  document.getElementById('search').addEventListener('input', () => applyFilters());
+  const dupSearch = document.getElementById('duplicatesSearch');
+  if (dupSearch) dupSearch.addEventListener('input', () => applyFilters());
   document.addEventListener('click', event => {
-    const menu = document.getElementById('teamFilterMenu');
-    if (!document.querySelector('.team-dropdown').contains(event.target)) {
-      menu.classList.add('hidden');
+    if (!event.target.closest('.team-dropdown')) {
+      document.querySelectorAll('.team-dropdown-menu').forEach(menu => menu.classList.add('hidden'));
     }
   });
 
@@ -690,7 +730,7 @@ function render(){
         <div class="stickers">
           ${Object.keys(duplicates[t]).sort((a,b)=>a-b).map(n => {
             const count = duplicates[t][n];
-            return `<span class="sticker duplicate" title="Remover ${t} ${n}" onclick="removeDup('${t}',${n})">${n}${count > 1 ? `<span class="dup-badge">${count}</span>` : ''}</span>`;
+            return `<span class="sticker duplicate" title="Remover ${t} ${n}" onclick="removeDup('${t}',${n})">${n}<span class="dup-badge">${count}</span></span>`;
           }).join('')}
         </div></div>`;
     }
@@ -701,6 +741,7 @@ function render(){
 
   document.getElementById('missing').innerHTML    = mHtml;
   document.getElementById('duplicates').innerHTML = dHtml;
+  applyFilters();
 
   const collected = Math.max(0, TOTAL - mt);
   const pct = Math.max(0, Math.min(100, Math.round((collected/TOTAL)*100)));
@@ -1133,88 +1174,189 @@ function updateMissingSelectionUI(){
   }
 }
 
-function populateTeamFilter(){
-  const menu = document.getElementById('teamFilterMenu');
+function getTeamFilterState(filterType){
+  return {
+    get selected(){ return filterType === 'duplicate' ? selectedDuplicateTeamFilters : selectedMissingTeamFilters; },
+    get pending(){ return filterType === 'duplicate' ? pendingDuplicateTeamFilters : pendingMissingTeamFilters; },
+    setPending(value){
+      if (filterType === 'duplicate') {
+        pendingDuplicateTeamFilters = value;
+      } else {
+        pendingMissingTeamFilters = value;
+      }
+    },
+    setSelected(value){
+      if (filterType === 'duplicate') {
+        selectedDuplicateTeamFilters = value;
+      } else {
+        selectedMissingTeamFilters = value;
+      }
+    }
+  };
+}
+
+function getDuplicateTeamCount(team){
+  if (!duplicates[team]) return 0;
+  return Object.values(duplicates[team]).reduce((sum, count) => sum + count, 0);
+}
+
+function populateTeamFilter(filterType){
+  const menuId = filterType === 'duplicate' ? 'dupFilterMenu' : 'teamFilterMenu';
+  const menu = document.getElementById(menuId);
+  if (!menu) return;
+
+  const state = getTeamFilterState(filterType);
   menu.innerHTML = '';
+
+  const searchWrap = document.createElement('div');
+  searchWrap.className = 'team-dropdown-search';
+  searchWrap.innerHTML = `
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input id="${filterType}FilterSearch" placeholder="Buscar time..." autocomplete="off">
+    </div>
+  `;
+  menu.appendChild(searchWrap);
+
   ALL_TEAMS.forEach(team => {
     const label = document.createElement('label');
     label.className = 'team-dropdown-item';
-    const checked = pendingTeamFilters.has(team) ? 'checked' : '';
-    label.innerHTML = `<input type="checkbox" value="${team}" ${checked}> <span class="team-filter-icon">${getTeamFlag(team)}</span> ${team} - ${getTeamName(team)}`;
+    const checked = state.pending.has(team) ? 'checked' : '';
+    let extraBadge = '';
+    if (filterType === 'duplicate') {
+      const teamCount = getDuplicateTeamCount(team);
+      if (teamCount > 0) {
+        label.classList.add('duplicate');
+        extraBadge = `<span class="dup-count-badge">${teamCount}</span>`;
+      }
+    }
+    label.innerHTML = `<input type="checkbox" value="${team}" ${checked}> <span class="team-filter-icon">${getTeamFlag(team)}</span> ${team} - ${getTeamName(team)} ${extraBadge}`;
     menu.appendChild(label);
   });
 
   const actions = document.createElement('div');
-  actions.className = 'team-dropdown-actions';
+  actions.className = 'team-dropdown-actions hidden';
   actions.innerHTML = `
-    <button type="button" class="btn btn-green btn-sm" id="teamFilterConfirmBtn">Confirmar</button>
-    <button type="button" class="btn btn-ghost btn-sm" id="teamFilterCancelBtn">Voltar</button>
+    <button type="button" class="btn btn-green btn-sm" id="${filterType}FilterConfirmBtn">Confirmar</button>
+    <button type="button" class="btn btn-ghost btn-sm" id="${filterType}FilterSelectAllBtn">Selecionar Todos</button>
+    <button type="button" class="btn btn-ghost btn-sm" id="${filterType}FilterClearBtn">Limpar</button>
+    <button type="button" class="btn btn-ghost btn-sm" id="${filterType}FilterCancelBtn">Voltar</button>
   `;
   menu.appendChild(actions);
 
-  updateTeamFilterButton();
+  updateTeamFilterButton(filterType);
+  updateTeamFilterActions(filterType);
+
+  const searchInput = menu.querySelector(`#${filterType}FilterSearch`);
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      const query = searchInput.value.toUpperCase().trim();
+      menu.querySelectorAll('.team-dropdown-item').forEach(label => {
+        const text = label.textContent.toUpperCase();
+        label.style.display = !query || text.includes(query) ? 'flex' : 'none';
+      });
+    });
+  }
 
   menu.querySelectorAll('input[type=checkbox]').forEach(input => {
     input.addEventListener('change', () => {
       const checked = Array.from(menu.querySelectorAll('input:checked')).map(i => i.value);
-      pendingTeamFilters = new Set(checked);
-      updateTeamFilterButton();
+      state.setPending(new Set(checked));
+      updateTeamFilterButton(filterType);
+      updateTeamFilterActions(filterType);
     });
   });
 
-  document.getElementById('teamFilterConfirmBtn').addEventListener('click', () => {
-    selectedTeamFilters = new Set(pendingTeamFilters);
+  document.getElementById(`${filterType}FilterConfirmBtn`).addEventListener('click', () => {
+    state.setSelected(new Set(state.pending));
+    saveTeamFilter(filterType);
     applyFilters();
-    toggleTeamFilterMenu();
+    toggleTeamFilterMenu(filterType);
   });
 
-  document.getElementById('teamFilterCancelBtn').addEventListener('click', () => {
-    selectedTeamFilters = new Set(ALL_TEAMS);
-    pendingTeamFilters = new Set(selectedTeamFilters);
-    applyFilters();
-    updateTeamFilterButton();
-    toggleTeamFilterMenu();
+  document.getElementById(`${filterType}FilterSelectAllBtn`).addEventListener('click', () => {
+    state.setPending(new Set(ALL_TEAMS));
+    menu.querySelectorAll('input[type=checkbox]').forEach(input => input.checked = true);
+    updateTeamFilterButton(filterType);
+    updateTeamFilterActions(filterType);
+  });
+
+  document.getElementById(`${filterType}FilterClearBtn`).addEventListener('click', () => {
+    state.setPending(new Set());
+    menu.querySelectorAll('input[type=checkbox]').forEach(input => input.checked = false);
+    updateTeamFilterButton(filterType);
+    updateTeamFilterActions(filterType);
+  });
+
+  document.getElementById(`${filterType}FilterCancelBtn`).addEventListener('click', () => {
+    state.setPending(new Set(state.selected));
+    updateTeamFilterButton(filterType);
+    updateTeamFilterActions(filterType);
+    toggleTeamFilterMenu(filterType);
   });
 }
 
-function toggleTeamFilterMenu(){
-  const menu = document.getElementById('teamFilterMenu');
-  const isHidden = menu.classList.contains('hidden');
-  if (isHidden) {
-    pendingTeamFilters = new Set(selectedTeamFilters);
-    populateTeamFilter();
+function toggleTeamFilterMenu(filterType){
+  const menuId = filterType === 'duplicate' ? 'dupFilterMenu' : 'teamFilterMenu';
+  const menu = document.getElementById(menuId);
+  if (!menu) return;
+
+  const state = getTeamFilterState(filterType);
+  if (menu.classList.contains('hidden')) {
+    state.setPending(new Set(state.selected));
+    populateTeamFilter(filterType);
   }
   menu.classList.toggle('hidden');
 }
 
-function updateTeamFilterButton(){
-  const button = document.getElementById('teamFilterBtn');
-  if (!selectedTeamFilters.size || selectedTeamFilters.size === ALL_TEAMS.length) {
+function updateTeamFilterButton(filterType){
+  const buttonId = filterType === 'duplicate' ? 'dupFilterBtn' : 'teamFilterBtn';
+  const button = document.getElementById(buttonId);
+  const selected = filterType === 'duplicate' ? selectedDuplicateTeamFilters : selectedMissingTeamFilters;
+  if (!button) return;
+  if (selected.size === ALL_TEAMS.length) {
     button.textContent = 'Todos os times ▾';
     return;
   }
-  if (selectedTeamFilters.size === 1) {
-    button.textContent = `${[...selectedTeamFilters][0]} ▾`;
+  if (selected.size === 0) {
+    button.textContent = 'Nenhum time ▾';
     return;
   }
-  button.textContent = `${selectedTeamFilters.size} times selecionados ▾`;
+  if (selected.size === 1) {
+    button.textContent = `${[...selected][0]} ▾`;
+    return;
+  }
+  button.textContent = `${selected.size} times selecionados ▾`;
+}
+
+function updateTeamFilterActions(filterType){
+  const menuId = filterType === 'duplicate' ? 'dupFilterMenu' : 'teamFilterMenu';
+  const menu = document.getElementById(menuId);
+  if (!menu) return;
+  const actions = menu.querySelector('.team-dropdown-actions');
+  if (!actions) return;
+  const selected = filterType === 'duplicate' ? selectedDuplicateTeamFilters : selectedMissingTeamFilters;
+  const pending = filterType === 'duplicate' ? pendingDuplicateTeamFilters : pendingMissingTeamFilters;
+  const same = selected.size === pending.size && [...selected].every(team => pending.has(team));
+  actions.classList.toggle('hidden', same);
 }
 
 function applyFilters(){
-  const q = document.getElementById('search').value.toUpperCase().trim();
-  const selectedTeams = Array.from(selectedTeamFilters);
+  const dupQuery = document.getElementById('duplicatesSearch')?.value.toUpperCase().trim() || '';
+  const selectedMissingTeams = Array.from(selectedMissingTeamFilters);
+  const selectedDuplicateTeams = Array.from(selectedDuplicateTeamFilters);
 
   document.querySelectorAll('#missing .team').forEach(el => {
     const team = el.dataset.team;
-    const matchesSearch = !q || team.includes(q);
-    const matchesTeam = selectedTeams.length ? selectedTeams.includes(team) : false;
-    el.style.display = matchesSearch && matchesTeam ? 'block' : 'none';
+    const matchesTeam = selectedMissingTeams.length ? selectedMissingTeams.includes(team) : false;
+    el.style.display = matchesTeam ? 'block' : 'none';
   });
 
   document.querySelectorAll('#duplicates .team').forEach(el => {
     const team = el.dataset.team;
-    const matchesSearch = !q || team.includes(q);
-    const matchesTeam = selectedTeams.length ? selectedTeams.includes(team) : false;
+    const teamName = getTeamName(team).toUpperCase();
+    const matchesTeam = selectedDuplicateTeams.length ? selectedDuplicateTeams.includes(team) : false;
+    const matchesSearch = !dupQuery || team.includes(dupQuery) || teamName.includes(dupQuery) || el.textContent.toUpperCase().includes(dupQuery);
     el.style.display = matchesSearch && matchesTeam ? 'block' : 'none';
   });
 }
