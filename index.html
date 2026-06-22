@@ -126,19 +126,49 @@ header{background:linear-gradient(120deg,var(--blue) 0%,#0a3d7c 50%,var(--green)
 
 #goalPopup{position:fixed;inset:0;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;z-index:1300;transition:opacity .25s ease}
 #goalPopup.hidden{opacity:0;pointer-events:none;}
-#goalPopup .goal-box{background:rgba(255,255,255,.98);border-radius:24px;padding:24px;max-width:500px;width:min(92vw,500px);text-align:center;box-shadow:0 25px 60px rgba(0,0,0,.25);overflow:hidden;}
-#goalPopup .goal-scene{position:relative;height:260px;margin-bottom:22px;display:flex;align-items:flex-end;justify-content:center}
-#goalPopup .goal-net{position:absolute;bottom:24px;width:90%;height:120px;border:4px solid var(--blue);border-top:none;border-radius:0 0 18px 18px;overflow:hidden;background:linear-gradient(180deg,rgba(255,255,255,.25),rgba(255,255,255,0));}
-#goalPopup .goal-net::before{content:'';position:absolute;inset:0;background-image:linear-gradient(90deg,rgba(255,255,255,.2) 1px,transparent 1px),linear-gradient(180deg,rgba(255,255,255,.2) 1px,transparent 1px);background-size:24px 24px;}
-#goalPopup .player{position:absolute;left:18px;bottom:24px;font-size:3rem;transform:translateY(0);animation:playerBounce 1.4s ease-in-out infinite;}
-#goalPopup .ball{position:absolute;left:20px;bottom:88px;width:40px;height:40px;background:radial-gradient(circle at 30% 30%,#fff,#f8f8f8 35%,#222 36%,#222 47%,#fff 48%,#fff 52%,#222 53%,#222 66%,#fff 67%);border-radius:50%;box-shadow:0 10px 20px rgba(0,0,0,.2);animation:ballShoot 1.3s ease-in-out forwards;}
+#goalPopup .goal-box{background:rgba(255,255,255,.98);border-radius:24px;padding:24px;max-width:520px;width:min(92vw,520px);text-align:center;box-shadow:0 25px 60px rgba(0,0,0,.25);overflow:hidden;}
+#goalPopup .goal-scene{position:relative;height:280px;margin-bottom:22px;display:flex;align-items:center;justify-content:center}
+#goalPopup .goal-campo{position:relative;width:100%;height:100%;background:linear-gradient(180deg,#114411,#22aa22);border-radius:20px;overflow:hidden;box-shadow:inset 0 0 30px rgba(0,0,0,.18);}
+#goalPopup .linha-gol{position:absolute;right:72px;top:0;bottom:0;width:6px;background:rgba(255,255,255,.55);}
+#goalPopup .trave{position:absolute;right:16px;top:48px;width:56px;height:180px;border:5px solid rgba(255,255,255,.95);border-left:none;background:rgba(255,255,255,.12);border-radius:0 16px 16px 0;}
+#goalPopup .boneco{position:absolute;left:34px;bottom:26px;width:82px;height:128px;}
+#goalPopup .cabeca{width:28px;height:32px;background:var(--cor-pele,#ffdbac);border-radius:50%;position:absolute;left:26px;top:0;box-shadow:0 2px 2px rgba(0,0,0,.18);}
+#goalPopup .cabeca::after{content:'';position:absolute;width:32px;height:15px;background:#331a00;border-radius:15px 15px 0 0;top:-5px;left:-2px;}
+#goalPopup .corpo{width:24px;height:50px;background:var(--blue);position:absolute;left:29px;top:28px;border-radius:6px 6px 0 0;box-shadow:inset 0 -5px 5px rgba(0,0,0,.12);}
+#goalPopup .bracos{width:60px;height:12px;position:absolute;left:11px;top:34px;transform-origin:center;animation:balancoBracos 2s ease-in-out infinite alternate;}
+#goalPopup .bracos::before,#goalPopup .bracos::after{content:'';position:absolute;top:0;width:30px;height:10px;background:linear-gradient(to right, var(--blue) 60%, var(--cor-pele,#ffdbac) 60%);border-radius:4px;}
+#goalPopup .bracos::before{left:0;}
+#goalPopup .bracos::after{right:0;background:linear-gradient(to left, var(--blue) 60%, var(--cor-pele,#ffdbac) 60%);}
+#goalPopup .perna{position:absolute;width:14px;top:76px;transform-origin:top center;}
+#goalPopup .perna::before{content:'';position:absolute;width:100%;height:45px;background:linear-gradient(to bottom, #fff 25%, var(--cor-pele,#ffdbac) 25%, var(--cor-pele,#ffdbac) 45%, #000 45%);border-radius:4px;}
+#goalPopup .perna::after{content:'';position:absolute;width:20px;height:10px;background:#ffdf00;bottom:-5px;border-radius:5px;}
+#goalPopup .perna-esquerda{left:20px;transform:rotate(10deg);}
+#goalPopup .perna-esquerda::after{left:-5px;}
+#goalPopup .perna-direita{left:42px;transform:rotate(-15deg);animation:chutar 3s cubic-bezier(0.6,-0.28,0.735,0.045) infinite;}
+#goalPopup .perna-direita::after{right:-5px;}
+#goalPopup .bola{width:24px;height:24px;background:#fff;border:3px dashed #000;border-radius:50%;position:absolute;left:176px;bottom:92px;animation:trajetoBola 3s cubic-bezier(0.25,0.46,0.45,0.94) infinite;box-shadow:0 6px 18px rgba(0,0,0,.18);}
+#goalPopup .parabens{position:absolute;width:100%;text-align:center;top:18px;font-size:1.55rem;font-weight:800;color:#ffdf00;text-shadow:2px 2px 0 rgba(0,0,0,.25);opacity:0;animation:gritarGol 3s ease-in-out infinite;pointer-events:none;}
 #goalPopup .goal-text{font-size:1.15rem;font-weight:700;color:var(--blue);line-height:1.4;margin-top:10px;}
 #goalPopup .goal-subtext{font-size:.95rem;color:#444;margin-top:6px;}
 #goalPopup .goal-close{margin-top:18px}
-@keyframes ballShoot{0%{left:20px;bottom:88px;transform:scale(1)}
-70%{left:calc(100% - 110px);bottom:120px;transform:scale(1.05)}
-100%{left:calc(100% - 70px);bottom:120px;transform:scale(.85);opacity:.8}}
-@keyframes playerBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+#goalPopup .confetti-container{position:absolute;inset:0;pointer-events:none;overflow:hidden;opacity:0;transition:opacity .25s ease}
+#goalPopup.active .confetti-container{opacity:1}
+#goalPopup .confetti{position:absolute;display:block;width:8px;height:16px;border-radius:4px;opacity:0;transform:translateY(0) rotate(25deg);}
+#goalPopup .confetti--1{left:12%;top:10%;background:#ff3b3b;animation:confettiFall 1.8s ease-out .4s forwards;}
+#goalPopup .confetti--2{left:24%;top:8%;background:#ffe54c;animation:confettiFall 1.9s ease-out .35s forwards;}
+#goalPopup .confetti--3{left:38%;top:6%;background:#42d392;animation:confettiFall 1.7s ease-out .45s forwards;}
+#goalPopup .confetti--4{left:52%;top:12%;background:#4d9cff;animation:confettiFall 1.85s ease-out .5s forwards;}
+#goalPopup .confetti--5{left:68%;top:10%;background:#ff7bdc;animation:confettiFall 1.75s ease-out .3s forwards;}
+#goalPopup .confetti--6{left:80%;top:5%;background:#ffab3f;animation:confettiFall 1.9s ease-out .38s forwards;}
+#goalPopup .confetti--7{left:18%;top:18%;background:#8b6bff;animation:confettiFall 1.6s ease-out .52s forwards;}
+#goalPopup .confetti--8{left:42%;top:16%;background:#00d5ff;animation:confettiFall 1.75s ease-out .47s forwards;}
+#goalPopup .confetti--9{left:60%;top:18%;background:#ffd11a;animation:confettiFall 1.8s ease-out .42s forwards;}
+#goalPopup .confetti--10{left:74%;top:14%;background:#13c483;animation:confettiFall 1.85s ease-out .33s forwards;}
+@keyframes confettiFall{0%{opacity:0;transform:translateY(0) rotate(0deg);}10%{opacity:1;}80%{transform:translateY(180px) rotate(240deg);}100%{opacity:0;transform:translateY(230px) rotate(420deg);}}
+@keyframes balancoBracos{0%{transform:rotate(-5deg);}100%{transform:rotate(5deg);}}
+@keyframes chutar{0%,20%{transform:rotate(-25deg);}30%{transform:rotate(50deg);}50%,100%{transform:rotate(0deg);}}
+@keyframes trajetoBola{0%,25%{left:176px;bottom:92px;transform:rotate(0deg);}45%{bottom:200px;}55%{left:428px;bottom:170px;}65%{left:445px;bottom:94px;transform:rotate(720deg);}75%,100%{left:439px;bottom:94px;transform:rotate(820deg);}}
+@keyframes gritarGol{0%,50%{opacity:0;transform:scale(0.5) translateY(20px);}55%{opacity:1;transform:scale(1.2) translateY(0);}60%,90%{opacity:1;transform:scale(1) translateY(0);}100%{opacity:0;transform:scale(0.8);}}
 
 /* GRID */
 .main-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
@@ -373,9 +403,31 @@ footer{background:linear-gradient(120deg,var(--blue) 0%,#0a3d7c 60%,var(--green)
 <div id="goalPopup" class="hidden">
   <div class="goal-box">
     <div class="goal-scene">
-      <div class="goal-net"></div>
-      <div class="player">🏃‍♂️</div>
-      <div class="ball"></div>
+      <div class="goal-campo">
+        <div class="linha-gol"></div>
+        <div class="trave"></div>
+        <div class="confetti-container">
+          <span class="confetti confetti--1"></span>
+          <span class="confetti confetti--2"></span>
+          <span class="confetti confetti--3"></span>
+          <span class="confetti confetti--4"></span>
+          <span class="confetti confetti--5"></span>
+          <span class="confetti confetti--6"></span>
+          <span class="confetti confetti--7"></span>
+          <span class="confetti confetti--8"></span>
+          <span class="confetti confetti--9"></span>
+          <span class="confetti confetti--10"></span>
+        </div>
+        <div class="boneco">
+          <div class="bracos"></div>
+          <div class="perna perna-esquerda"></div>
+          <div class="corpo"></div>
+          <div class="cabeca"></div>
+          <div class="perna perna-direita"></div>
+        </div>
+        <div class="bola"></div>
+        <div class="parabens">PARABÉNS!</div>
+      </div>
     </div>
     <div class="goal-text">Parabéns <span id="goalCollectorName">Colecionador</span>!</div>
     <div class="goal-subtext">Time <strong id="goalTeamName">---</strong> completo!</div>
@@ -803,14 +855,16 @@ function completeTeam(team, checkbox){
 
 function showGoalPopup(team){
   document.getElementById('goalCollectorName').textContent = collectorName || 'Colecionador';
-  document.getElementById('goalTeamName').textContent = team;
+  document.getElementById('goalTeamName').textContent = getTeamName(team);
   const popup = document.getElementById('goalPopup');
   popup.classList.remove('hidden');
+  popup.classList.add('active');
 }
 
 function hideGoalPopup(){
   const popup = document.getElementById('goalPopup');
   popup.classList.add('hidden');
+  popup.classList.remove('active');
 }
 
 function restore(){
