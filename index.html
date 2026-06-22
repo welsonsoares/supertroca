@@ -38,9 +38,13 @@ img,video,canvas{max-width:100%;height:auto;display:block}
 @keyframes scanline{0%{top:12px}100%{top:calc(100% - 15px)}}
 canvas#snapCanvas{display:none}
 #scanStatus{font-size:.88rem;color:#555;min-height:22px;margin-bottom:10px}
+.manual-entry{display:none;background:#fff9f3;border:1px solid rgba(246,130,13,.16);border-radius:14px;padding:14px 16px;margin-top:12px}
+.manual-entry.visible{display:block}
+.manual-entry-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.manual-entry select,.manual-entry input{border:1px solid #d1d5db;border-radius:12px;padding:10px;min-width:90px}
 
 /* SCANNER RESULT */
-#scanResult{display:none;background:#f8fdf9;border:2px solid var(--green);border-radius:12px;padding:16px;margin-bottom:14px;text-align:left}
+#scanResult{display:none;background:#f8df9;border:2px solid var(--green);border-radius:12px;padding:16px;margin-bottom:14px;text-align:left}
 #scanResult .res-title{font-weight:700;font-size:.8rem;text-transform:uppercase;letter-spacing:1px;color:#888;margin-bottom:4px}
 #scanResult .res-sticker{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--blue);letter-spacing:2px}
 #scanResult .res-status{font-size:.9rem;margin-top:8px;font-weight:600}
@@ -367,6 +371,17 @@ footer{background:linear-gradient(120deg,var(--blue) 0%,#0a3d7c 60%,var(--green)
       <div class="res-sticker" id="resSticker">—</div>
       <div class="res-status" id="resStatus"></div>
       <div id="resActions"></div>
+    </div>
+
+    <div id="manualEntry" class="manual-entry">
+      <div class="manual-entry-row">
+        <select id="manualTeamSel"></select>
+        <input id="manualNumInp" type="number" placeholder="Nº" min="1" max="99">
+        <button class="btn btn-green btn-sm" onclick="confirmManualEntry()">Digitar manualmente</button>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:10px">
+        <button class="btn btn-ghost btn-sm" onclick="closeScanner()">Cancelar</button>
+      </div>
     </div>
 
     <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
@@ -1341,6 +1356,7 @@ async function openScanner(){
     video.srcObject = camStream;
     video.onloadedmetadata = async () => {
       await video.play().catch(() => {});
+      populateManualTeamSelect();
       document.getElementById('scanStatus').textContent = 'Câmera pronta. Posicione o verso da figurinha.';
       document.getElementById('snapBtn').disabled = false;
       if (autoScanTimer) clearInterval(autoScanTimer);
@@ -1420,6 +1436,7 @@ function renderCollected(){
 
 function resetScan(){
   document.getElementById('scanResult').style.display = 'none';
+  document.getElementById('manualEntry').classList.remove('visible');
   document.getElementById('scanStatus').textContent = 'Câmera pronta. Posicione o verso da figurinha.';
   document.getElementById('snapBtn').disabled = false;
 }
@@ -1431,21 +1448,41 @@ function promiseTimeout(ms, promise){
   });
 }
 
+function populateManualTeamSelect(){
+  const select = document.getElementById('manualTeamSel');
+  if (!select) return;
+  select.innerHTML = ALL_TEAMS.map(team => `<option value="${team}">${team}</option>`).join('');
+}
+
+function confirmManualEntry(){
+  const team = document.getElementById('manualTeamSel').value;
+  const num = parseInt(document.getElementById('manualNumInp').value, 10);
+  if (!team || !num || num < 1) {
+    alert('Informe o time e o número da figurinha.');
+    return;
+  }
+  document.getElementById('resSticker').textContent = `${team} ${num}`;
+  document.getElementById('resStatus').textContent = '🔧 Entrada manual selecionada.';
+  document.getElementById('resStatus').className = 'res-status found';
+  document.getElementById('resActions').innerHTML = `<button class="btn btn-green btn-sm" onclick="found('${team}',${num}); closeScanner();">Colar no Álbum</button>`;
+  document.getElementById('scanResult').style.display = 'block';
+}
+
 async function snapAndScan(){
   const video  = document.getElementById('camVideo');
   const canvas = document.getElementById('snapCanvas');
   if (!camStream || !video.videoWidth || isAutoScanning){ return; }
   isAutoScanning = true;
 
-  const captureWidth = Math.floor(video.videoWidth * 0.32);
-  const captureHeight = Math.floor(video.videoHeight * 0.18);
-  const captureX = Math.floor(video.videoWidth * 0.62);
-  const captureY = Math.floor(video.videoHeight * 0.08);
+  const captureWidth = Math.floor(video.videoWidth * 0.12);
+  const captureHeight = Math.floor(video.videoHeight * 0.09);
+  const captureX = Math.floor(video.videoWidth * 0.83);
+  const captureY = Math.floor(video.videoHeight * 0.078);
 
   canvas.width  = captureWidth;
   canvas.height = captureHeight;
   const ctx = canvas.getContext('2d');
-  ctx.filter = 'contrast(1.2) brightness(1.05)';
+  ctx.filter = 'contrast(1.25) brightness(1.1)';
   ctx.drawImage(video, captureX, captureY, captureWidth, captureHeight, 0, 0, captureWidth, captureHeight);
   ctx.filter = 'none';
 
@@ -1511,7 +1548,8 @@ async function snapAndScan(){
         actionsEl.innerHTML = `<button class="btn btn-orange btn-sm" onclick="addScannedDup('${t}',${n}); closeScanner();">Adicionar às Repetidas</button>`;
       }
     } else {
-      document.getElementById('scanStatus').textContent = '🔎 Não foi possível identificar. Ajuste a figurinha e tente novamente.';
+      document.getElementById('scanStatus').textContent = '🔎 Não foi possível identificar. Ajuste a figurinha, cancele ou digite manualmente.';
+      document.getElementById('manualEntry').classList.add('visible');
       document.getElementById('snapBtn').disabled = false;
       // A varredura automática mantém a tentativa enquanto o modal estiver aberto.
     }
@@ -1521,8 +1559,9 @@ async function snapAndScan(){
     if (e && e.message === 'timeout') {
       document.getElementById('scanStatus').textContent = '⏱️ Tempo de leitura excedido. Ajuste e tente novamente.';
     } else {
-      document.getElementById('scanStatus').textContent = '⚠️ Erro ao processar a imagem do scanner.';
+      document.getElementById('scanStatus').textContent = '⚠️ Erro ao processar a imagem do scanner. Cancele ou digite manualmente.';
     }
+    document.getElementById('manualEntry').classList.add('visible');
     document.getElementById('snapBtn').disabled = false;
   } finally {
     isAutoScanning = false;
