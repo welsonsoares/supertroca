@@ -531,6 +531,8 @@ let undo = null;
 let confirmCallback = null;
 let cancelCallback = null;
 let camStream = null;
+let autoScanTimer = null;
+let isAutoScanning = false;
 let currentTradeSticker = null;
 let currentAddDupTeam = null;
 let currentAddDupNumber = null;
@@ -1235,9 +1237,18 @@ async function openScanner(){
     camStream = await navigator.mediaDevices.getUserMedia({
       video:{ facingMode:'environment', width:{ideal:1280}, height:{ideal:720} }
     });
-    document.getElementById('camVideo').srcObject = camStream;
-    document.getElementById('scanStatus').textContent = 'Câmera pronta. Posicione o verso da figurinha.';
-    document.getElementById('snapBtn').disabled = false;
+    const video = document.getElementById('camVideo');
+    video.srcObject = camStream;
+    video.onloadedmetadata = async () => {
+      await video.play().catch(() => {});
+      document.getElementById('scanStatus').textContent = 'Câmera pronta. Posicione o verso da figurinha.';
+      document.getElementById('snapBtn').disabled = false;
+      setTimeout(() => {
+        if (!document.getElementById('scannerModal').classList.contains('hidden')) {
+          snapAndScan();
+        }
+      }, 1200);
+    };
   } catch(e){
     document.getElementById('scanStatus').textContent =
       '⚠️ Acesso à câmera negado. Permita a câmera no navegador e tente novamente.';
@@ -1261,6 +1272,7 @@ async function requestCameraPermission(){
 }
 
 function closeScanner(){
+  if (autoScanTimer){ clearInterval(autoScanTimer); autoScanTimer = null; }
   if (camStream){ camStream.getTracks().forEach(t=>t.stop()); camStream=null; }
   document.getElementById('scannerModal').classList.add('hidden');
   resetScan();
@@ -1314,7 +1326,8 @@ function resetScan(){
 async function snapAndScan(){
   const video  = document.getElementById('camVideo');
   const canvas = document.getElementById('snapCanvas');
-  if (!camStream || !video.videoWidth){ return; }
+  if (!camStream || !video.videoWidth || isAutoScanning){ return; }
+  isAutoScanning = true;
 
   canvas.width  = video.videoWidth;
   canvas.height = video.videoHeight;
@@ -1334,10 +1347,16 @@ async function snapAndScan(){
       }
     });
 
-    const rawText = result.data.text.replace(/\n/g, ' ').replace(/\r/g, ' ').trim();
+    const rawText = result.data.text
+      .replace(/\n/g, ' ')
+      .replace(/\r/g, ' ')
+      .replace(/[^A-Za-z0-9\s]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toUpperCase();
     document.getElementById('loadingOverlay').classList.add('hidden');
 
-    const regex = /([A-Za-z]{2,3})\s*[-:]?\s*(\d{1,2})/g;
+    const regex = /\b([A-Z]{2,3})\s*[-:]?\s*(\d{1,2})\b/g;
     let match;
     let parsed = null;
     while ((match = regex.exec(rawText)) !== null) {
@@ -1386,7 +1405,7 @@ async function snapAndScan(){
         actionsEl.innerHTML = `<button class="btn btn-orange btn-sm" onclick="addScannedDup('${t}',${n}); closeScanner();">Adicionar às Repetidas</button>`;
       }
     } else {
-      document.getElementById('scanStatus').textContent = '⚠️ Não foi possível identificar. Tente focar melhor e repita a leitura.';
+      document.getElementById('scanStatus').textContent = '🔎 Não foi possível identificar. Ajuste a figurinha e tente novamente.';
       document.getElementById('snapBtn').disabled = false;
     }
   } catch(e) {
@@ -1394,6 +1413,8 @@ async function snapAndScan(){
     document.getElementById('loadingOverlay').classList.add('hidden');
     document.getElementById('scanStatus').textContent = '⚠️ Erro ao processar a imagem do scanner.';
     document.getElementById('snapBtn').disabled = false;
+  } finally {
+    isAutoScanning = false;
   }
 }
 </script>
