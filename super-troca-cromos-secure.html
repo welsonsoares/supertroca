@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Super Troca de Cromos – Copa 2026</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&display=swap');
+:root{--green:#009c3b;--yellow:#ffdf00;--blue:#002776;--white:#fff;--bg:#f0f4f8;--card:#fff;--danger:#e53e3e;--orange:#f6820d;--radius:14px;--shadow:0 4px 18px rgba(0,0,0,.10)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',Arial,sans-serif;background:var(--bg);color:#1a1a2e;min-height:100vh;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;}
+input,textarea,select,button{user-select:text !important;-webkit-user-select:text !important;-moz-user-select:text !important;-ms-user-select:text !important;}
+
+/* MODAL */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;z-index:999}
+.modal-backdrop.hidden{display:none}
+.modal{background:#fff;border-radius:20px;padding:32px 28px;width:min(480px,92vw);text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal h2{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:2px;color:var(--blue);margin-bottom:6px}
+.modal p{color:#555;margin-bottom:20px;font-size:.95rem;line-height:1.5}
+.modal-badge{font-size:3.2rem;margin-bottom:12px;line-height:1}
+.modal input[type=text],.modal input[type=number],.modal select{width:100%;padding:13px 16px;border-radius:10px;border:2px solid #ddd;font-size:1.05rem;font-family:'Inter',sans-serif;text-align:center;transition:border-color .2s;margin-bottom:14px}
+.modal input:focus,.modal select:focus{outline:none;border-color:var(--green)}
+
+/* SCANNER MODAL */
+#scannerModal .modal{max-width:520px}
+#cameraWrap{position:relative;width:100%;border-radius:12px;overflow:hidden;background:#000;margin-bottom:14px}
+#cameraWrap video{width:100%;display:block;max-height:300px;object-fit:cover}
+.scan-frame{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.scan-corner{position:absolute;width:56px;height:56px;border-color:var(--yellow);border-style:solid;border-width:0}
+.scan-corner.tl{top:12px;left:12px;border-top-width:4px;border-left-width:4px}
+.scan-corner.tr{top:12px;right:12px;border-top-width:4px;border-right-width:4px}
+.scan-corner.bl{bottom:12px;left:12px;border-bottom-width:4px;border-left-width:4px}
+.scan-corner.br{bottom:12px;right:12px;border-bottom-width:4px;border-right-width:4px}
+.scan-line{position:absolute;left:12px;right:12px;height:3px;background:linear-gradient(90deg,transparent,var(--yellow),transparent);animation:scanline 2s ease-in-out infinite}
+@keyframes scanline{0%{top:12px}100%{top:calc(100% - 15px)}}
+canvas#snapCanvas{display:none}
+#scanStatus{font-size:.88rem;color:#555;min-height:22px;margin-bottom:10px}
+
+/* SCANNER RESULT */
+#scanResult{display:none;background:#f8fdf9;border:2px solid var(--green);border-radius:12px;padding:16px;margin-bottom:14px;text-align:left}
+#scanResult .res-title{font-weight:700;font-size:.8rem;text-transform:uppercase;letter-spacing:1px;color:#888;margin-bottom:4px}
+#scanResult .res-sticker{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--blue);letter-spacing:2px}
+#scanResult .res-status{font-size:.9rem;margin-top:8px;font-weight:600}
+#scanResult .res-status.missing{color:#b45309}
+#scanResult .res-status.found{color:var(--green)}
+#scanResult .res-status.dup{color:var(--orange)}
+#resActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+
+/* CONFIRM */
+#confirmOverlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:1100}
+#confirmOverlay.hidden{display:none}
+.confirm-box{background:#fff;border-radius:16px;padding:26px 24px;width:min(360px,90vw);text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.confirm-box h3{font-size:1.05rem;margin-bottom:6px;color:var(--blue)}
+.confirm-box p{font-size:.88rem;color:#666;margin-bottom:18px}
+.confirm-row{display:flex;gap:10px;justify-content:center}
+
+/* HEADER */
+header{background:linear-gradient(120deg,var(--blue) 0%,#0a3d7c 50%,var(--green) 100%);position:relative;overflow:hidden}
+.header-inner{max-width:1200px;margin:auto;padding:24px 18px 20px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.header-left h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.5rem,5vw,2.4rem);color:var(--yellow);letter-spacing:3px;line-height:1}
+.header-left .subtitle{color:rgba(255,255,255,.72);font-size:.82rem;margin-top:4px;letter-spacing:.5px}
+.collector-badge{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);border-radius:40px;padding:7px 18px;color:#fff;font-size:.88rem;display:flex;align-items:center;gap:8px;cursor:pointer;transition:background .2s;white-space:nowrap}
+.collector-badge:hover{background:rgba(255,255,255,.22)}
+.collector-badge .avatar{width:30px;height:30px;background:var(--yellow);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.95rem;color:var(--blue);font-weight:700}
+
+/* WRAP */
+.wrap{max-width:1200px;margin:auto;padding:18px 13px 36px}
+
+/* SCANNER BUTTON STRIP */
+.scanner-strip{background:linear-gradient(90deg,var(--blue),#1a4fa0);border-radius:var(--radius);padding:18px 22px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px;box-shadow:var(--shadow);border:1px solid rgba(255,255,255,.16)}
+.scanner-strip-text{color:#fff;min-width:220px}
+.scanner-strip-text strong{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:1.5px;display:block;color:var(--yellow)}
+.scanner-strip-text span{font-size:.85rem;opacity:.85;display:block;margin-top:6px;line-height:1.4}
+.btn-scan{background:var(--yellow);color:var(--blue);font-weight:700;font-size:.95rem;padding:13px 22px;border-radius:14px;border:2px solid rgba(255,255,255,.28);cursor:pointer;display:flex;align-items:center;gap:10px;transition:transform .1s,opacity .15s,box-shadow .2s;white-space:nowrap;box-shadow:0 12px 28px rgba(0,0,0,.10)}
+.btn-scan:hover{opacity:.95;box-shadow:0 14px 32px rgba(0,0,0,.14)}
+.btn-scan:active{transform:scale(.98)}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:16px}
+@media(max-width:600px){.stats{grid-template-columns:repeat(2,1fr)}}
+.stat-card{background:var(--card);border-radius:var(--radius);padding:18px 16px 16px;box-shadow:var(--shadow);position:relative;overflow:hidden;min-height:120px}
+.stat-card::before{content:'';position:absolute;bottom:0;left:0;right:0;height:4px}
+.stat-card.miss::before{background:var(--yellow)}
+.stat-card.dup::before{background:var(--green)}
+.stat-card.prog::before{background:var(--blue)}
+.stat-card.total::before{background:var(--orange)}
+.stat-card.complete::before{background:#6c63ff}
+.stat-label{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1.1px;color:#777}
+.stat-value{font-family:'Bebas Neue',sans-serif;font-size:2.4rem;color:var(--blue);line-height:1.05;margin-top:8px}
+.stat-sub{font-size:.74rem;color:#7a7f8f;margin-top:4px}
+.stat-list{margin-top:10px;text-align:left;white-space:pre-wrap;line-height:1.35;color:#4b5563;max-height:74px;overflow:auto;padding-right:4px}
+
+/* PROGRESS */
+.progress-wrap{background:#fff;border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow);margin-bottom:16px}
+.progress-label{display:flex;justify-content:space-between;font-size:.82rem;font-weight:700;color:#495057;margin-bottom:9px}
+.progress-track{height:15px;background:#e8edf2;border-radius:22px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--green),var(--yellow));border-radius:22px;transition:width .5s ease}
+
+/* SEARCH */
+.search-wrap{position:relative;margin-bottom:14px}
+.search-wrap input{width:100%;padding:14px 18px 14px 44px;border-radius:18px;border:1px solid rgba(66,153,225,.2);font-size:.97rem;background:#fff;box-shadow:var(--shadow);transition:border-color .2s,box-shadow .2s}
+.search-wrap input:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 6px rgba(0,156,59,.08)}
+.search-icon{position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:1.05rem;pointer-events:none}
+.team-filter-wrap{margin-bottom:18px}
+.team-filter-wrap label{display:block;font-size:.78rem;font-weight:700;color:#555;margin-bottom:8px}
+.team-dropdown{position:relative}
+.team-dropdown-toggle{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 16px;border-radius:18px;border:1px solid rgba(66,153,225,.2);background:#fff;color:#223248;font-size:.95rem;cursor:pointer;box-shadow:var(--shadow);transition:border-color .2s,box-shadow .2s}
+.team-dropdown-toggle:hover{border-color:var(--green);box-shadow:0 0 0 8px rgba(0,156,59,.08)}
+.team-dropdown-menu{position:absolute;top:calc(100% + 8px);left:0;right:0;z-index:20;background:#fff;border:1px solid rgba(66,153,225,.2);border-radius:18px;box-shadow:0 18px 30px rgba(0,0,0,.12);max-height:260px;overflow:auto;padding:10px;}
+.team-dropdown-menu.hidden{display:none}
+.team-dropdown-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;cursor:pointer;transition:background .2s}
+.team-dropdown-item:hover{background:rgba(0,156,59,.08)}
+.team-dropdown-item input{accent-color:var(--green);}
+.team-filter-icon{font-size:1rem;display:inline-flex;width:20px;text-align:center;margin-right:10px}
+.brand-mark{display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;margin-right:10px;border-radius:14px;background:var(--green);color:#fff;font-size:.95rem;font-weight:800;box-shadow:0 12px 26px rgba(0,0,0,.18)}
+.field-icon{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;background:rgba(0,156,59,.1);border-radius:8px;font-size:0.95rem;margin-right:8px}
+.team-filter-wrap{margin-bottom:26px}
+.team-dropdown-toggle{text-align:left}
+.complete-team-row{margin-top:14px;padding-top:12px;border-top:1px solid rgba(0,0,0,.05)}
+.complete-team-row label{display:flex;align-items:center;gap:10px;font-size:.95rem;color:#333;cursor:pointer}
+.complete-team-row input[type=checkbox]{width:18px;height:18px;accent-color:var(--green);}
+
+#goalPopup{position:fixed;inset:0;background:rgba(0,0,0,.78);display:flex;align-items:center;justify-content:center;z-index:1300;transition:opacity .25s ease}
+#goalPopup.hidden{opacity:0;pointer-events:none;}
+#goalPopup .goal-box{background:rgba(255,255,255,.98);border-radius:24px;padding:24px;max-width:500px;width:min(92vw,500px);text-align:center;box-shadow:0 25px 60px rgba(0,0,0,.25);overflow:hidden;}
+#goalPopup .goal-scene{position:relative;height:260px;margin-bottom:22px;display:flex;align-items:flex-end;justify-content:center}
+#goalPopup .goal-net{position:absolute;bottom:24px;width:90%;height:120px;border:4px solid var(--blue);border-top:none;border-radius:0 0 18px 18px;overflow:hidden;background:linear-gradient(180deg,rgba(255,255,255,.25),rgba(255,255,255,0));}
+#goalPopup .goal-net::before{content:'';position:absolute;inset:0;background-image:linear-gradient(90deg,rgba(255,255,255,.2) 1px,transparent 1px),linear-gradient(180deg,rgba(255,255,255,.2) 1px,transparent 1px);background-size:24px 24px;}
+#goalPopup .player{position:absolute;left:18px;bottom:24px;font-size:3rem;transform:translateY(0);animation:playerBounce 1.4s ease-in-out infinite;}
+#goalPopup .ball{position:absolute;left:20px;bottom:88px;width:40px;height:40px;background:radial-gradient(circle at 30% 30%,#fff,#f8f8f8 35%,#222 36%,#222 47%,#fff 48%,#fff 52%,#222 53%,#222 66%,#fff 67%);border-radius:50%;box-shadow:0 10px 20px rgba(0,0,0,.2);animation:ballShoot 1.3s ease-in-out forwards;}
+#goalPopup .goal-text{font-size:1.15rem;font-weight:700;color:var(--blue);line-height:1.4;margin-top:10px;}
+#goalPopup .goal-subtext{font-size:.95rem;color:#444;margin-top:6px;}
+#goalPopup .goal-close{margin-top:18px}
+@keyframes ballShoot{0%{left:20px;bottom:88px;transform:scale(1)}
+70%{left:calc(100% - 110px);bottom:120px;transform:scale(1.05)}
+100%{left:calc(100% - 70px);bottom:120px;transform:scale(.85);opacity:.8}}
+@keyframes playerBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+
+/* GRID */
+.main-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.main-grid::-webkit-scrollbar{height:10px}
+@media(max-width:860px){
+  .main-grid{grid-template-columns:1fr 1fr;overflow-x:auto;padding-bottom:10px}
+  .team-dropdown-menu{position:fixed;top:90px;left:10px;right:10px;max-height:50vh;}
+}
+
+/* PANEL */
+.panel{background:var(--card);border-radius:var(--radius);padding:20px 18px;box-shadow:var(--shadow);border:1px solid rgba(0,0,0,.05)}
+.panel-header{font-family:'Bebas Neue',sans-serif;font-size:1.25rem;letter-spacing:2px;color:var(--blue);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.panel-count{background:var(--blue);color:#fff;font-family:'Inter',sans-serif;font-size:.75rem;font-weight:700;padding:4px 11px;border-radius:22px;margin-left:auto}
+
+/* TEAM */
+.team{margin-bottom:16px;border-radius:16px;border:1px solid rgba(0,0,0,.06);background:#fbfdff;padding:12px}
+.team-title{font-size:.75rem;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;background:rgba(0,39,118,.06);padding:8px 11px;border-radius:999px;color:var(--blue);display:inline-flex;align-items:center;gap:6px;margin-bottom:10px}
+.stickers{display:grid;grid-template-columns:repeat(auto-fit,minmax(58px,1fr));gap:10px}
+.sticker{padding:12px 10px;border-radius:14px;cursor:pointer;font-weight:700;font-size:.92rem;transition:transform .15s,opacity .15s,box-shadow .15s;user-select:none;text-align:center;color:#223248;background:#f5f7fb;border:1px solid rgba(66,153,225,.18);min-height:44px;display:flex;align-items:center;justify-content:center}
+.sticker:hover{transform:translateY(-2px);box-shadow:0 12px 24px rgba(0,0,0,.08)}
+.sticker:active{transform:translateY(0)}
+.sticker.collected{background:#e9f7ef;border:2px solid #7ac27a;color:#1b5e20}
+.sticker.selected{background:var(--blue);color:#fff;border-color:rgba(255,255,255,.9);box-shadow:0 0 0 2px rgba(255,255,255,.55)}
+.floating-add-selected{position:fixed;right:18px;bottom:18px;z-index:1200;box-shadow:0 18px 40px rgba(0,0,0,.18);border-radius:16px;padding:0;}
+.floating-add-selected.hidden{display:none}
+
+/* ADD FORM */
+.add-form{display:flex;gap:7px;flex-wrap:wrap;margin-top:14px;padding-top:13px;border-top:1px solid #f0f4f8;align-items:center}
+.add-form input{padding:9px 11px;border-radius:9px;border:2px solid #e2e8f0;font-size:.88rem;transition:border-color .2s}
+.add-form input:focus{outline:none;border-color:var(--green)}
+.add-form .inp-team{flex:1;min-width:72px}
+.add-form .inp-num{width:76px}
+
+/* BUTTONS */
+.btn{padding:9px 17px;border-radius:9px;border:none;font-size:.86rem;font-weight:700;cursor:pointer;transition:opacity .15s,transform .1s;white-space:nowrap}
+.btn:hover{opacity:.88}
+.btn:active{transform:scale(.97)}
+.btn-green{background:var(--green);color:#fff}
+.btn-blue{background:var(--blue);color:#fff}
+.btn-yellow{background:var(--yellow);color:var(--blue)}
+.btn-orange{background:var(--orange);color:#fff}
+.btn-red{background:var(--danger);color:#fff}
+.btn-ghost{background:#f0f4f8;color:#555}
+.btn-sm{padding:7px 12px;font-size:.8rem}
+
+/* UNDO */
+.undo-panel{background:var(--card);border-radius:var(--radius);padding:13px 17px;box-shadow:var(--shadow);margin-top:13px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.undo-label{font-size:.83rem;color:#888}
+.undo-tag{font-size:.93rem;font-weight:700;color:var(--blue)}
+
+/* EMPTY */
+.empty{text-align:center;color:#bbb;font-size:.88rem;padding:18px 0}
+
+/* NEW ALBUM */
+.new-album-btn-wrap{text-align:center;margin-top:26px}
+
+/* FOOTER */
+footer{background:linear-gradient(120deg,var(--blue) 0%,#0a3d7c 60%,var(--green) 100%);margin-top:40px;padding:26px 18px;text-align:center}
+.footer-inner{max-width:1200px;margin:auto;display:flex;flex-direction:column;align-items:center;gap:7px}
+.footer-dev{color:var(--yellow);font-family:'Bebas Neue',sans-serif;font-size:1.05rem;letter-spacing:2px}
+.footer-name{color:#fff;font-weight:700;font-size:.98rem;letter-spacing:.5px}
+.footer-dates{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;margin-top:3px}
+.footer-date-item{color:rgba(255,255,255,.6);font-size:.76rem;display:flex;align-items:center;gap:4px}
+.footer-date-item strong{color:rgba(255,255,255,.9);font-weight:600}
+.footer-divider{width:38px;height:2px;background:var(--yellow);border-radius:2px;opacity:.6;margin:3px 0}
+
+/* LOADING OVERLAY */
+#loadingOverlay{position:fixed;inset:0;background:rgba(0,39,118,.82);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2000;gap:14px}
+#loadingOverlay.hidden{display:none}
+#loadingOverlay .load-txt{color:#fff;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:2px}
+.big-spinner{width:52px;height:52px;border:5px solid rgba(255,255,255,.2);border-top-color:var(--yellow);border-radius:50%;animation:spin .9s linear infinite}
+</style>
+<script>
+  document.addEventListener('contextmenu', event => event.preventDefault());
+  document.addEventListener('copy', event => event.preventDefault());
+  document.addEventListener('cut', event => event.preventDefault());
+  document.addEventListener('paste', event => event.preventDefault());
+  document.addEventListener('selectstart', event => {
+    const tag = event.target.tagName;
+    if (tag !== 'INPUT' && tag !== 'TEXTAREA' && tag !== 'SELECT' && tag !== 'OPTION') {
+      event.preventDefault();
+    }
+  });
+  document.addEventListener('keydown', event => {
+    if (event.ctrlKey && ['u','U','s','S','c','C','x','X'].includes(event.key)) {
+      event.preventDefault();
+    }
+    if (event.ctrlKey && event.shiftKey && ['I','J','C'].includes(event.key)) {
+      event.preventDefault();
+    }
+    if (['F12', 'F5'].includes(event.key)) {
+      event.preventDefault();
+    }
+  });
+</script>
+</head>
+<body>
+
+<div id="overlay" class="modal-backdrop">
+  <div class="modal">
+    <div class="modal-badge">🏆</div>
+    <h2>Super Troca de Cromos</h2>
+    <p>Copa do Mundo 2026<br>Qual é o seu nome, colecionador?</p>
+    <input id="nameInput" type="text" placeholder="Digite seu nome..." maxlength="30" autocomplete="off">
+    <button class="btn btn-green" style="width:100%;padding:13px;font-size:1rem" onclick="startApp()">Começar →</button>
+  </div>
+</div>
+
+<div id="tradeModal" class="modal-backdrop hidden">
+  <div class="modal" style="padding:24px 20px">
+    <div class="modal-badge">🔄</div>
+    <h2>Registrar Troca de Cromo</h2>
+    <p id="tradeModalDesc">Você está entregando a figurinha.</p>
+    <div style="text-align:left;margin-bottom:15px">
+      <label style="font-size:.85rem;font-weight:700;color:var(--blue);display:block;margin-bottom:5px">Qual cromo você recebeu de volta?</label>
+      <div style="display:flex;gap:6px">
+        <select id="tradeTeamSel" style="flex:2;margin-bottom:0;text-align-last:center;height:46px;padding:5px;"></select>
+        <input id="tradeNumInp" type="number" placeholder="Nº" min="0" max="20" style="flex:1;margin-bottom:0;height:46px;">
+      </div>
+      <small style="color:#777;font-size:.78rem;margin-top:4px;display:block">Apenas figurinhas que estão na sua lista de Faltantes serão baixadas.</small>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:20px">
+      <button class="btn btn-ghost" style="flex:1" onclick="closeTradeModal()">Ignorar Entrada</button>
+      <button class="btn btn-green" style="flex:1" id="tradeConfirmBtn">Confirmar Troca</button>
+    </div>
+  </div>
+</div>
+
+<div id="addDupModal" class="modal-backdrop hidden">
+  <div class="modal" style="max-width:520px;padding:22px 20px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <h2 style="font-size:1.5rem;margin:0">➕ Adicionar Repetidas</h2>
+      <button class="btn btn-ghost btn-sm" onclick="closeAddDupModal()">✕ Fechar</button>
+    </div>
+    <p style="font-size:.82rem;color:#777;margin-bottom:12px">Selecione o time e escolha as figurinhas que você tem repetidas.</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+      <select id="addDupTeamSel" style="flex:1;min-width:140px;height:46px;padding:5px;text-align-last:center" onchange="renderAddDupNumbers()"></select>
+      <button class="btn btn-blue btn-sm" onclick="renderAddDupNumbers()">Atualizar números</button>
+    </div>
+    <div id="addDupNumbers" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(48px,1fr));gap:8px;max-height:260px;overflow:auto;margin-bottom:12px"></div>
+    <div id="addDupSummary" style="font-style:italic;color:#555;margin-bottom:14px;max-height:140px;overflow:auto;white-space:pre-wrap"></div>
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:6px">
+      <label style="font-weight:700;color:#555;min-width:130px">Nº selecionado</label>
+      <div id="addDupSelected" style="flex:1;color:#222">Nenhum</div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:18px">
+      <label style="font-weight:700;color:#555;min-width:130px">Quantidade</label>
+      <input id="addDupQty" type="number" min="1" value="1" style="flex:1;height:42px;padding:0 12px;border-radius:9px;border:2px solid #e2e8f0;text-align:center">
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center">
+      <button class="btn btn-green" onclick="confirmAddDup()">Adicionar ao estoque</button>
+      <button class="btn btn-ghost btn-sm" onclick="closeAddDupModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div id="scannerModal" class="modal-backdrop hidden">
+  <div class="modal" style="padding:22px 20px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <h2 style="font-size:1.5rem;margin:0">📷 Scanner de Cromo</h2>
+      <button class="btn btn-ghost btn-sm" onclick="closeScanner()">✕ Fechar</button>
+    </div>
+    <p style="font-size:.82rem;color:#777;margin-bottom:12px">Aponte a câmera para o <strong>verso</strong> da figurinha e toque em "Escanear"</p>
+
+    <div id="cameraWrap">
+      <video id="camVideo" autoplay playsinline muted></video>
+      <div class="scan-frame">
+        <div class="scan-corner tl"></div>
+        <div class="scan-corner tr"></div>
+        <div class="scan-corner bl"></div>
+        <div class="scan-corner br"></div>
+        <div class="scan-line"></div>
+      </div>
+    </div>
+    <canvas id="snapCanvas"></canvas>
+
+    <div id="scanStatus">Câmera pronta. Posicione o verso da figurinha.</div>
+
+    <div id="scanResult">
+      <div class="res-title">Figurinha identificada</div>
+      <div class="res-sticker" id="resSticker">—</div>
+      <div class="res-status" id="resStatus"></div>
+      <div id="resActions"></div>
+    </div>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
+      <button class="btn btn-scan" id="snapBtn" onclick="snapAndScan()">
+        📸 Escanear Figurinha
+      </button>
+      <button class="btn btn-ghost btn-sm" onclick="resetScan()">🔄 Nova Leitura</button>
+    </div>
+  </div>
+</div>
+
+<div id="collectedModal" class="modal-backdrop hidden">
+  <div class="modal" style="max-width:640px;padding:24px 22px;max-height:80vh;overflow:hidden;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <h2 style="font-size:1.5rem;margin:0">📘 Meu Álbum Atualizado</h2>
+      <button class="btn btn-ghost btn-sm" onclick="closeCollectedModal()">✕</button>
+    </div>
+    <p style="font-size:.82rem;color:#777;margin-bottom:14px">Veja aqui todas as figurinhas coladas ou já adquiridas, mesmo que não estejam na lista de faltantes.</p>
+    <div id="collectedContent" style="max-height:calc(80vh - 120px);overflow:auto;padding-right:4px"></div>
+  </div>
+</div>
+
+<div id="confirmOverlay" class="hidden">
+  <div class="confirm-box">
+    <h3 id="confirmTitle">Confirmar?</h3>
+    <p id="confirmText"></p>
+    <div class="confirm-row">
+      <button class="btn btn-ghost btn-sm" onclick="cancelConfirm()">Cancelar</button>
+      <button class="btn btn-green btn-sm" id="confirmOk">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div id="goalPopup" class="hidden">
+  <div class="goal-box">
+    <div class="goal-scene">
+      <div class="goal-net"></div>
+      <div class="player">🏃‍♂️</div>
+      <div class="ball"></div>
+    </div>
+    <div class="goal-text">Parabéns <span id="goalCollectorName">Colecionador</span>!</div>
+    <div class="goal-subtext">Time <strong id="goalTeamName">---</strong> completo!</div>
+    <button class="btn btn-blue btn-sm goal-close" onclick="hideGoalPopup()">Continuar</button>
+  </div>
+</div>
+
+<div id="loadingOverlay" class="hidden">
+  <div class="big-spinner"></div>
+  <div class="load-txt">Analisando figurinha...</div>
+</div>
+
+<header>
+  <div class="header-inner">
+    <div class="header-left">
+      <h1><span class="brand-mark">WS</span> Super Troca de Cromos</h1>
+      <div class="subtitle">Álbum Copa do Mundo 2026</div>
+    </div>
+    <div class="collector-badge" onclick="editName()" title="Clique para editar seu nome">
+      <div class="avatar" id="avatarLetter">?</div>
+      <span id="collectorName">Colecionador</span>
+      <span style="opacity:.5;font-size:.78rem">✏️</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="scanner-strip">
+    <div class="scanner-strip-text">
+      <strong>📷 Scanner de Cromo</strong>
+      <span>Aponte para o verso da figurinha e identifique na hora</span>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:flex-end">
+      <button class="btn btn-blue btn-sm" onclick="openCollectedModal()">Meu Álbum Atualizado</button>
+      <button class="btn-scan" onclick="openScanner()">📷 Escanear Cromo</button>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card miss">
+      <div class="stat-label"><span class="field-icon">❌</span> Faltantes</div>
+      <div class="stat-value" id="mc">0</div>
+      <div class="stat-sub">figurinhas</div>
+    </div>
+    <div class="stat-card dup">
+      <div class="stat-label"><span class="field-icon">🔄</span> Repetidas</div>
+      <div class="stat-value" id="dc">0</div>
+      <div class="stat-sub">para trocar</div>
+    </div>
+    <div class="stat-card prog">
+      <div class="stat-label"><span class="field-icon">📈</span> Progresso</div>
+      <div class="stat-value" id="pc">0%</div>
+      <div class="stat-sub">do álbum</div>
+    </div>
+    <div class="stat-card complete">
+      <div class="stat-label">Times completos</div>
+      <div class="stat-value" id="tc">0</div>
+      <div class="stat-sub">grupos completos</div>
+      <div class="stat-list" id="tcList" style="margin-top:8px;font-size:.72rem;color:#555;line-height:1.3;max-height:70px;overflow:auto"></div>
+      <div class="stat-sub" style="margin-top:10px;font-size:.78rem;font-weight:700;color:#444">Times com 80%+ completos</div>
+      <div class="stat-list" id="nearCompleteList" style="margin-top:6px;font-size:.72rem;color:#555;line-height:1.3;max-height:70px;overflow:auto"></div>
+    </div>
+    <div class="stat-card total">
+      <div class="stat-label"><span class="field-icon">✅</span> Coletadas</div>
+      <div class="stat-value" id="cc">0</div>
+      <div class="stat-sub">de <span id="lblTotal">994</span></div>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span id="progName">Álbum de …</span>
+      <span id="progPct">0%</span>
+    </div>
+    <div class="progress-track">
+      <div id="bar" class="progress-fill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input id="search" placeholder="Pesquisar seleção (BRA, MEX, CAN, GER, ARG...)">
+  </div>
+
+  <div class="main-grid">
+    <div class="panel">
+      <div class="panel-header">❌ Faltantes<span class="panel-count" id="mc2">0</span></div>
+      <div class="team-filter-wrap" style="margin-bottom:18px;">
+        <label for="teamFilterBtn">Filtrar times faltantes</label>
+        <div class="team-dropdown">
+          <button id="teamFilterBtn" type="button" class="team-dropdown-toggle" onclick="toggleTeamFilterMenu()">Todos os times ▾</button>
+          <div id="teamFilterMenu" class="team-dropdown-menu hidden"></div>
+        </div>
+      </div>
+      <div id="missing"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">🔄 Repetidas<span class="panel-count" id="dc2">0</span></div>
+      <div id="duplicates"></div>
+      <div class="add-form">
+        <button class="btn btn-green btn-sm" onclick="openAddDupModal()">+ Adicionar repetidas</button>
+        <button class="btn btn-blue btn-sm" onclick="share()">WhatsApp</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="undo-panel">
+    <div>
+      <div class="undo-label">↩️ Última figurinha recebida</div>
+      <div class="undo-tag" id="undoTag">—</div>
+    </div>
+    <div id="undoBtn"></div>
+  </div>
+
+  <div id="batchAddBtn" class="btn btn-blue floating-add-selected hidden" onclick="addSelectedMissing()">Adicionar selecionadas</div>
+
+  <div class="new-album-btn-wrap">
+    <button class="btn btn-red" onclick="newAlbum()">🗑️ Iniciar Novo Álbum</button>
+    <div style="font-size:.76rem;color:#aaa;margin-top:7px">Apaga todos os dados e reinicia do zero</div>
+  </div>
+
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-dev">⚽ Desenvolvido por</div>
+    <div class="footer-name">Welson Soares</div>
+    <div class="footer-divider"></div>
+    <div class="footer-dates">
+      <div class="footer-date-item">📅 Criado em <strong>19 de junho de 2025</strong></div>
+      <div class="footer-date-item">🔄 Atualizado em <strong>22 de junho de 2026</strong></div>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* ═══════════════════════════════════════════
+   DATA & CONFIGS (ORDEM OFICIAL DA PLANILHA)
+═══════════════════════════════════════════ */
+const ALL_TEAMS = [
+  "FWC", "MEX", "RSA", "KOR", "CZE", "CAN", "BIH", "QAT", "SUI", "BRA", 
+  "MAR", "HAI", "SCO", "USA", "PAR", "AUS", "TUR", "GER", "CUW", "CIV", 
+  "ECU", "NED", "JPN", "SWE", "TUN", "BEL", "EGY", "IRN", "NZL", "ESP", 
+  "CPV", "KSA", "URU", "FRA", "SEN", "IRQ", "NOR", "ARG", "ALG", "AUT", 
+  "JOR", "POR", "COD", "UZB", "COL", "ENG", "CRO", "GHA", "PAN", "CC"
+];
+
+const TEAM_FLAGS = {
+  FWC:'🏆', MEX:'🇲🇽', RSA:'🇿🇦', KOR:'🇰🇷', CZE:'🇨🇿', CAN:'🇨🇦', BIH:'🇧🇦', QAT:'🇶🇦', SUI:'🇨🇭', BRA:'🇧🇷',
+  MAR:'🇲🇦', HAI:'🇭🇹', SCO:'🏴', USA:'🇺🇸', PAR:'🇵🇾', AUS:'🇦🇺', TUR:'🇹🇷', GER:'🇩🇪', CUW:'🇨🇼', CIV:'🇨🇮',
+  ECU:'🇪🇨', NED:'🇳🇱', JPN:'🇯🇵', SWE:'🇸🇪', TUN:'🇹🇳', BEL:'🇧🇪', EGY:'🇪🇬', IRN:'🇮🇷', NZL:'🇳🇿', ESP:'🇪🇸',
+  CPV:'🇨🇻', KSA:'🇸🇦', URU:'🇺🇾', FRA:'🇫🇷', SEN:'🇸🇳', IRQ:'🇮🇶', NOR:'🇳🇴', ARG:'🇦🇷', ALG:'🇩🇿', AUT:'🇦🇹',
+  JOR:'🇯🇴', POR:'🇵🇹', COD:'🇨🇩', UZB:'🇺🇿', COL:'🇨🇴', ENG:'🏴', CRO:'🇭🇷', GHA:'🇬🇭', PAN:'🇵🇦', CC:'CC'
+};
+
+const TEAM_NAMES = {
+  FWC:'FIFA World Cup', MEX:'México', RSA:'África do Sul', KOR:'Coreia do Sul', CZE:'República Tcheca', CAN:'Canadá',
+  BIH:'Bósnia e Herzegovina', QAT:'Catar', SUI:'Suíça', BRA:'Brasil', MAR:'Marrocos', HAI:'Haiti', SCO:'Escócia',
+  USA:'Estados Unidos', PAR:'Paraguai', AUS:'Austrália', TUR:'Turquia', GER:'Alemanha', CUW:'Curaçao', CIV:'Costa do Marfim',
+  ECU:'Equador', NED:'Países Baixos', JPN:'Japão', SWE:'Suécia', TUN:'Tunísia', BEL:'Bélgica', EGY:'Egito',
+  IRN:'Irã', NZL:'Nova Zelândia', ESP:'Espanha', CPV:'Cabo Verde', KSA:'Arábia Saudita', URU:'Uruguai', FRA:'França',
+  SEN:'Senegal', IRQ:'Iraque', NOR:'Noruega', ARG:'Argentina', ALG:'Argélia', AUT:'Áustria', JOR:'Jordânia',
+  POR:'Portugal', COD:'República Democrática do Congo', UZB:'Uzbequistão', COL:'Colômbia', ENG:'Inglaterra', CRO:'Croácia',
+  GHA:'Gana', PAN:'Panamá', CC:'Coca Cola'
+};
+
+function getTeamFlag(team){
+  return TEAM_FLAGS[team] || '🏁';
+}
+
+function getTeamName(team){
+  return TEAM_NAMES[team] || 'Time desconhecido';
+}
+
+function getStickerLimits(team) {
+  const upperTeam = team.toUpperCase();
+  if (upperTeam === "FWC") return { min: 0, max: 19 }; 
+  if (upperTeam === "CC")  return { min: 1, max: 14 }; 
+  return { min: 1, max: 20 };                          
+}
+
+function calculateTotalStickers() {
+  let sum = 0;
+  ALL_TEAMS.forEach(team => {
+    const lim = getStickerLimits(team);
+    sum += (lim.max - lim.min + 1);
+  });
+  return sum;
+}
+
+const TOTAL = calculateTotalStickers(); // 994 cromos
+
+let undo = null;
+let confirmCallback = null;
+let cancelCallback = null;
+let camStream = null;
+let currentTradeSticker = null;
+let currentAddDupTeam = null;
+let currentAddDupNumber = null;
+let selectedMissing = new Set();
+let selectedTeamFilters = new Set();
+let pendingDupSelections = {};
+
+function generateCleanMissing() {
+  const cleanObj = {};
+  ALL_TEAMS.forEach(team => {
+    const upperTeam = team.toUpperCase();
+    cleanObj[upperTeam] = [];
+    const lim = getStickerLimits(upperTeam);
+    for(let i = lim.min; i <= lim.max; i++) {
+      cleanObj[upperTeam].push(i);
+    }
+  });
+  return cleanObj;
+}
+
+let missing = JSON.parse(localStorage.getItem('missing'));
+let duplicates = JSON.parse(localStorage.getItem('duplicates')) || {};
+let collectorName = localStorage.getItem('collectorName') || '';
+
+if (duplicates && typeof duplicates === 'object') {
+  Object.keys(duplicates).forEach(team => {
+    if (Array.isArray(duplicates[team])) {
+      const counts = {};
+      duplicates[team].forEach(num => {
+        counts[num] = (counts[num] || 0) + 1;
+      });
+      duplicates[team] = counts;
+    }
+  });
+}
+
+if (!missing) {
+  missing = generateCleanMissing();
+  duplicates = {};
+}
+
+/* ═══════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('lblTotal').textContent = TOTAL;
+  populateTradeSelect();
+  populateTeamFilter();
+  if (collectorName) {
+    document.getElementById('overlay').classList.add('hidden');
+    applyName(collectorName);
+    render();
+  } else {
+    const ni = document.getElementById('nameInput');
+    ni.focus();
+    ni.addEventListener('keydown', e => { if(e.key==='Enter') startApp(); });
+  }
+  document.getElementById('search').addEventListener('input', () => applyFilters());
+  document.addEventListener('click', event => {
+    const menu = document.getElementById('teamFilterMenu');
+    if (!document.querySelector('.team-dropdown').contains(event.target)) {
+      menu.classList.add('hidden');
+    }
+  });
+
+  // Garantir que o progresso seja salvo antes de fechar a aba, especialmente em mobile
+  window.addEventListener('beforeunload', save);
+  window.addEventListener('pagehide', save);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') save();
+  });
+});
+
+function startApp(){
+  const v = document.getElementById('nameInput').value.trim();
+  if (!v){ document.getElementById('nameInput').focus(); return; }
+  collectorName = v;
+  localStorage.setItem('collectorName', collectorName);
+  document.getElementById('overlay').classList.add('hidden');
+  
+  if(!localStorage.getItem('missing')) {
+    missing = generateCleanMissing();
+    duplicates = {};
+    save();
+  }
+  
+  applyName(collectorName);
+  render();
+}
+
+function applyName(name){
+  document.getElementById('collectorName').textContent = name;
+  const letter = name.replace(/[^a-zA-ZÀ-ú]/g,'')[0] || '?';
+  document.getElementById('avatarLetter').textContent = letter.toUpperCase();
+}
+
+function editName(){
+  document.getElementById('nameInput').value = collectorName;
+  document.getElementById('overlay').classList.remove('hidden');
+  document.getElementById('nameInput').focus();
+}
+
+/* ═══════════════════════════════════════════
+   SAVE / RENDER (SEQUÊNCIA PRESERVADA)
+═══════════════════════════════════════════ */
+function save(){
+  localStorage.setItem('missing',    JSON.stringify(missing));
+  localStorage.setItem('duplicates', JSON.stringify(duplicates));
+}
+
+function render(){
+  let mHtml='', dHtml='', mt=0, dt=0;
+
+  // Renderiza seguindo estritamente a ordem de ALL_TEAMS (Ordem da Planilha)
+  ALL_TEAMS.forEach(t => {
+    if (missing[t] && missing[t].length > 0) {
+      mt += missing[t].length;
+      mHtml += `<div class="team" data-team="${t}">
+        <div class="team-title">${getTeamFlag(t)} ${t} - ${getTeamName(t)}</div>
+        <div class="stickers">
+          ${missing[t].sort((a,b)=>a-b).map(n => {
+            const key = `${t}|${n}`;
+            const selected = selectedMissing.has(key) ? ' selected' : '';
+            return `<span class="sticker missing${selected}" title="Clique para selecionar ${t} ${n}" onclick="toggleMissingSelection('${t}',${n})">${n}</span>`;
+          }).join('')}
+        </div>
+        <div class="complete-team-row"><label><input type="checkbox" onchange="completeTeam('${t}', this)"> Completar Time</label></div>
+      </div>`;
+    }
+
+    if (duplicates[t] && Object.keys(duplicates[t]).length > 0) {
+      dt += Object.values(duplicates[t]).reduce((sum, value) => sum + value, 0);
+      dHtml += `<div class="team" data-team="${t}">
+        <div class="team-title">${getTeamFlag(t)} ${t} - ${getTeamName(t)}</div>
+        <div class="stickers">
+          ${Object.keys(duplicates[t]).sort((a,b)=>a-b).map(n => {
+            const count = duplicates[t][n];
+            return `<span class="sticker duplicate" title="Remover ${t} ${n}" onclick="removeDup('${t}',${n})">${n}${count > 1 ? `<span class="dup-badge">${count}</span>` : ''}</span>`;
+          }).join('')}
+        </div></div>`;
+    }
+  });
+
+  if (!mHtml) mHtml = '<div class="empty">🎉 Nenhuma figurinha faltando!</div>';
+  if (!dHtml) dHtml = '<div class="empty">Nenhuma repetida ainda.</div>';
+
+  document.getElementById('missing').innerHTML    = mHtml;
+  document.getElementById('duplicates').innerHTML = dHtml;
+
+  const collected = Math.max(0, TOTAL - mt);
+  const pct = Math.max(0, Math.min(100, Math.round((collected/TOTAL)*100)));
+  const completedTeams = ALL_TEAMS.filter(t => !missing[t] || missing[t].length === 0);
+  const nearCompleteTeams = ALL_TEAMS.filter(t => {
+    const lim = getStickerLimits(t);
+    const totalTeam = lim.max - lim.min + 1;
+    const missingCount = missing[t] ? missing[t].length : 0;
+    const completedCount = totalTeam - missingCount;
+    const ratio = completedCount / totalTeam;
+    return ratio >= 0.8 && ratio < 1;
+  });
+
+  document.getElementById('mc').textContent  = mt;
+  document.getElementById('mc2').textContent = mt;
+  document.getElementById('dc').textContent  = dt;
+  document.getElementById('dc2').textContent = dt;
+  document.getElementById('tc').textContent  = completedTeams.length;
+  document.getElementById('tcList').textContent = completedTeams.length ? completedTeams.join(', ') : 'Nenhum';
+  document.getElementById('nearCompleteList').textContent = nearCompleteTeams.length ? nearCompleteTeams.join(', ') : 'Nenhum';
+  document.getElementById('pc').textContent  = pct+'%';
+  document.getElementById('progPct').textContent = pct+'%';
+  document.getElementById('cc').textContent  = collected;
+  document.getElementById('bar').style.width = pct+'%';
+  document.getElementById('progName').textContent = `Álbum de ${collectorName||'Colecionador'}`;
+
+  const undoTag = document.getElementById('undoTag');
+  const undoBtn = document.getElementById('undoBtn');
+  if (undo){
+    undoTag.textContent = `${undo.team} ${undo.num}`;
+    undoBtn.innerHTML = `<button class="btn btn-orange btn-sm" onclick="restore()">↩️ Desfazer</button>`;
+  } else {
+    undoTag.textContent = '—';
+    undoBtn.innerHTML = '';
+  }
+
+  updateMissingSelectionUI();
+  applyFilters();
+  save();
+}
+
+/* ═══════════════════════════════════════════
+   STICKER ACTIONS
+═══════════════════════════════════════════ */
+function confirmFound(team, num){
+  showConfirm('Recebi essa figurinha!',
+    `Confirmar recebimento de ${team} ${num}?`,
+    () => found(team, num));
+}
+
+function found(team, num){
+  undo = {team, num};
+  if (missing[team]) {
+    missing[team] = missing[team].filter(x => x !== num);
+    if (!missing[team].length) delete missing[team];
+  }
+  render();
+}
+
+function completeTeam(team, checkbox){
+  if (!checkbox.checked) return;
+  if (!missing[team] || !missing[team].length) return;
+
+  showConfirm(
+    'Completar Time',
+    `Marcar ${team} como completo removerá ${missing[team].length} figurinhas faltantes deste time. Deseja prosseguir?`,
+    () => {
+      delete missing[team];
+      undo = null;
+      render();
+      showGoalPopup(team);
+    },
+    'btn-blue',
+    'Sim, completar',
+    () => { checkbox.checked = false; }
+  );
+}
+
+function showGoalPopup(team){
+  document.getElementById('goalCollectorName').textContent = collectorName || 'Colecionador';
+  document.getElementById('goalTeamName').textContent = team;
+  const popup = document.getElementById('goalPopup');
+  popup.classList.remove('hidden');
+}
+
+function hideGoalPopup(){
+  const popup = document.getElementById('goalPopup');
+  popup.classList.add('hidden');
+}
+
+function restore(){
+  if (!undo) return;
+  if (!missing[undo.team]) missing[undo.team] = [];
+  if (!missing[undo.team].includes(undo.num)) missing[undo.team].push(undo.num);
+  undo = null;
+  render();
+}
+
+function addDup(){
+  const t = document.getElementById('teamInp').value.toUpperCase().trim();
+  const raw = document.getElementById('numInp').value.trim();
+  if (!t || !raw) return;
+
+  if (!ALL_TEAMS.includes(t)) {
+    alert('Código de seleção inválido.');
+    return;
+  }
+
+  const lim = getStickerLimits(t);
+  const numbers = raw.split(/[\s,;]+/).map(v => parseInt(v, 10)).filter(n => !isNaN(n));
+  if (!numbers.length) {
+    alert('Informe ao menos um número válido para adicionar.');
+    return;
+  }
+
+  const invalid = numbers.filter(n => n < lim.min || n > lim.max);
+  if (invalid.length) {
+    alert(`Número(s) inválido(s) para ${t}: ${[...new Set(invalid)].join(', ')}. Deve(m) ser de ${lim.min} a ${lim.max}.`);
+    return;
+  }
+
+  if (!duplicates[t]) duplicates[t] = [];
+  numbers.forEach(n => {
+    if (!duplicates[t].includes(n)) duplicates[t].push(n);
+  });
+  duplicates[t].sort((a,b) => a - b);
+
+  document.getElementById('teamInp').value = t;
+  document.getElementById('numInp').value  = '';
+  render();
+}
+
+function addScannedDup(team, num){
+  if (!duplicates[team]) duplicates[team] = {};
+  duplicates[team][num] = (duplicates[team][num] || 0) + 1;
+  render();
+}
+
+function openAddDupModal(){
+  const select = document.getElementById('addDupTeamSel');
+  select.innerHTML = '';
+  ALL_TEAMS.forEach(team => {
+    const opt = document.createElement('option');
+    opt.value = team;
+    opt.textContent = team;
+    select.appendChild(opt);
+  });
+  currentAddDupTeam = ALL_TEAMS[0];
+  currentAddDupNumber = null;
+  pendingDupSelections = {};
+  document.getElementById('addDupQty').value = 1;
+  document.getElementById('addDupSelected').textContent = 'Nenhum';
+  document.getElementById('addDupSummary').textContent = 'Nenhum item selecionado.';
+  document.getElementById('addDupModal').classList.remove('hidden');
+  renderAddDupNumbers();
+}
+
+function closeAddDupModal(){
+  document.getElementById('addDupModal').classList.add('hidden');
+  currentAddDupTeam = null;
+  currentAddDupNumber = null;
+}
+
+function renderAddDupNumbers(){
+  const team = document.getElementById('addDupTeamSel').value;
+  currentAddDupTeam = team;
+  const container = document.getElementById('addDupNumbers');
+  container.innerHTML = '';
+  const lim = getStickerLimits(team);
+  const counts = duplicates[team] || {};
+  const pending = pendingDupSelections[team] || {};
+  for (let n = lim.min; n <= lim.max; n++) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'add-dup-number' + (currentAddDupNumber===n ? ' selected':'' );
+    btn.onclick = () => addPendingDup(team, n);
+    const label = document.createElement('span');
+    label.textContent = n;
+    btn.appendChild(label);
+
+    const pendingCount = pending[n] || 0;
+    if (pendingCount > 0) {
+      const badge = document.createElement('span');
+      badge.textContent = pendingCount;
+      badge.style.position = 'absolute';
+      badge.style.top = '6px';
+      badge.style.right = '6px';
+      badge.style.background = 'var(--blue)';
+      badge.style.color = '#fff';
+      badge.style.borderRadius = '50%';
+      badge.style.width = '22px';
+      badge.style.height = '22px';
+      badge.style.display = 'flex';
+      badge.style.alignItems = 'center';
+      badge.style.justifyContent = 'center';
+      badge.style.fontSize = '0.7rem';
+      badge.style.fontWeight = '700';
+      btn.appendChild(badge);
+    }
+
+    if (counts[n] > 1) {
+      const badge = document.createElement('span');
+      badge.textContent = counts[n];
+      badge.style.position = 'absolute';
+      badge.style.bottom = '6px';
+      badge.style.right = '6px';
+      badge.style.background = 'var(--danger)';
+      badge.style.color = '#fff';
+      badge.style.borderRadius = '50%';
+      badge.style.width = '20px';
+      badge.style.height = '20px';
+      badge.style.display = 'flex';
+      badge.style.alignItems = 'center';
+      badge.style.justifyContent = 'center';
+      badge.style.fontSize = '0.7rem';
+      badge.style.fontWeight = '700';
+      btn.appendChild(badge);
+    }
+
+    container.appendChild(btn);
+  }
+  updateAddDupSummary();
+}
+
+function addPendingDup(team, num){
+  currentAddDupTeam = team;
+  currentAddDupNumber = num;
+  pendingDupSelections[team] = pendingDupSelections[team] || {};
+  pendingDupSelections[team][num] = (pendingDupSelections[team][num] || 0) + 1;
+  document.getElementById('addDupSelected').textContent = num;
+  renderAddDupNumbers();
+}
+
+function updateAddDupSummary(){
+  const summary = document.getElementById('addDupSummary');
+  const lines = [];
+  Object.keys(pendingDupSelections).forEach(team => {
+    const items = pendingDupSelections[team];
+    const entries = Object.keys(items).sort((a,b)=>a-b).map(num => {
+      const count = items[num];
+      return ` ${num} (${count} Exemplares)`;
+    });
+    if (entries.length) {
+      lines.push(`${team} ${entries.join('\n')}`);
+    }
+  });
+  if (!lines.length) {
+    summary.textContent = 'Nenhum item selecionado.';
+  } else {
+    summary.textContent = lines.join('\n');
+  }
+}
+
+function confirmAddDup(){
+  const hasSelection = Object.keys(pendingDupSelections).some(team => Object.keys(pendingDupSelections[team] || {}).length > 0);
+  if (!hasSelection) {
+    alert('Selecione ao menos uma figurinha repetida antes de adicionar.');
+    return;
+  }
+
+  Object.keys(pendingDupSelections).forEach(team => {
+    Object.keys(pendingDupSelections[team]).forEach(numStr => {
+      const num = Number(numStr);
+      const count = pendingDupSelections[team][numStr];
+      if (!duplicates[team]) duplicates[team] = {};
+      duplicates[team][num] = (duplicates[team][num] || 0) + count;
+    });
+  });
+
+  pendingDupSelections = {};
+  closeAddDupModal();
+  render();
+}
+
+function populateTradeSelect() {
+  const select = document.getElementById('tradeTeamSel');
+  select.innerHTML = '';
+  // Popula o select mantendo a ordem estrita dos grupos da planilha original
+  ALL_TEAMS.forEach(team => {
+    const opt = document.createElement('option');
+    opt.value = team.toUpperCase();
+    opt.textContent = team.toUpperCase();
+    select.appendChild(opt);
+  });
+}
+
+function removeDup(team, num){
+  currentTradeSticker = { team, num };
+  showConfirm(
+    '🔄 Registrar Troca de Cromo', 
+    `Você está removendo a repetida ${team} ${num}. Essa remoção foi fruto de uma troca por outra figurinha que você precisava?`, 
+    () => {
+      document.getElementById('tradeModalDesc').innerHTML = `Você está entregando a figurinha <strong>${team} ${num}</strong>.<br>Insira os dados do cromo pendente que recebeu em troca:`;
+      document.getElementById('tradeNumInp').value = '';
+      document.getElementById('tradeModal').classList.remove('hidden');
+      
+      document.getElementById('tradeConfirmBtn').onclick = () => {
+        const novaSelecao = document.getElementById('tradeTeamSel').value;
+        const novoNumero = parseInt(document.getElementById('tradeNumInp').value);
+        
+        if (isNaN(novoNumero)) {
+          alert('Por favor, informe um número válido de figurinha.');
+          return;
+        }
+        
+        const lim = getStickerLimits(novaSelecao);
+        if (novoNumero < lim.min || novoNumero > lim.max) {
+          alert(`Número inválido para ${novaSelecao}. Deve ser de ${lim.min} a ${lim.max}.`);
+          return;
+        }
+
+        if (duplicates[currentTradeSticker.team] && duplicates[currentTradeSticker.team][currentTradeSticker.num]) {
+          duplicates[currentTradeSticker.team][currentTradeSticker.num]--;
+          if (duplicates[currentTradeSticker.team][currentTradeSticker.num] <= 0) {
+            delete duplicates[currentTradeSticker.team][currentTradeSticker.num];
+          }
+          if (Object.keys(duplicates[currentTradeSticker.team]).length === 0) {
+            delete duplicates[currentTradeSticker.team];
+          }
+        }
+
+        if (missing[novaSelecao] && missing[novaSelecao].includes(novoNumero)) {
+          missing[novaSelecao] = missing[novaSelecao].filter(x => x !== novoNumero);
+          if (!missing[novaSelecao].length) delete missing[novaSelecao];
+          undo = { team: novaSelecao, num: novoNumero };
+        }
+        
+        closeTradeModal();
+        render();
+      };
+    }, 
+    'btn-orange', 
+    'Sim, foi troca!', 
+    () => {
+      if (duplicates[team] && duplicates[team][num]) {
+        duplicates[team][num]--;
+        if (duplicates[team][num] <= 0) {
+          delete duplicates[team][num];
+        }
+        if (Object.keys(duplicates[team]).length === 0) {
+          delete duplicates[team];
+        }
+      }
+      render();
+    }
+  );
+}
+
+function closeTradeModal() {
+  document.getElementById('tradeModal').classList.add('hidden');
+  currentTradeSticker = null;
+}
+
+function newAlbum(){
+  showConfirm('⚠️ Iniciar Novo Álbum',
+    'Isso apagará TODOS os seus dados e iniciará um álbum 100% LIMPO e do zero. Tem certeza?',
+    () => {
+      missing = generateCleanMissing(); 
+      duplicates = {};
+      undo = null;
+      collectorName = '';
+      localStorage.removeItem('collectorName');
+      save(); 
+      render();
+      document.getElementById('nameInput').value = '';
+      document.getElementById('overlay').classList.remove('hidden');
+      document.getElementById('nameInput').focus();
+    }, 'btn-red', 'Sim, limpar tudo');
+}
+
+function share(){
+  const name = collectorName || 'Colecionador';
+  let txt = `🏆 Super Troca de Cromos – ${name}\nÁlbum Copa do Mundo 2026\n\n`;
+  txt += '❌ FALTANTES\n';
+  ALL_TEAMS.forEach(t => {
+    if(missing[t] && missing[t].length > 0) txt += `${t}: ${missing[t].join(', ')}\n`;
+  });
+  txt += '\n🔄 REPETIDAS (disponíveis para troca)\n';
+  ALL_TEAMS.forEach(t => {
+    if (duplicates[t] && Object.keys(duplicates[t]).length > 0) {
+      const items = Object.keys(duplicates[t]).sort((a,b)=>a-b).map(n => {
+        const qty = duplicates[t][n];
+        return qty > 1 ? `${n} (x${qty})` : `${n}`;
+      });
+      txt += `${t}: ${items.join(', ')}\n`;
+    }
+  });
+  window.open('https://wa.me/?text='+encodeURIComponent(txt));
+}
+
+function cleanupSelectedMissing(){
+  selectedMissing.forEach(key => {
+    const [team, numStr] = key.split('|');
+    const num = Number(numStr);
+    if (!missing[team] || !missing[team].includes(num)) {
+      selectedMissing.delete(key);
+    }
+  });
+}
+
+function toggleMissingSelection(team, num){
+  const key = `${team}|${num}`;
+  if (selectedMissing.has(key)) {
+    selectedMissing.delete(key);
+  } else {
+    selectedMissing.add(key);
+  }
+  updateMissingSelectionUI();
+}
+
+function updateMissingSelectionUI(){
+  document.querySelectorAll('#missing .sticker.missing').forEach(el => {
+    const team = el.closest('.team')?.dataset.team;
+    const num = el.textContent.trim();
+    if (team) {
+      const key = `${team}|${num}`;
+      el.classList.toggle('selected', selectedMissing.has(key));
+    }
+  });
+
+  const button = document.getElementById('batchAddBtn');
+  if (selectedMissing.size > 0) {
+    button.classList.remove('hidden');
+    button.textContent = `Adicionar selecionadas (${selectedMissing.size})`;
+  } else {
+    button.classList.add('hidden');
+    button.textContent = 'Adicionar selecionadas';
+  }
+}
+
+function populateTeamFilter(){
+  const menu = document.getElementById('teamFilterMenu');
+  menu.innerHTML = '';
+  ALL_TEAMS.forEach(team => {
+    const label = document.createElement('label');
+    label.className = 'team-dropdown-item';
+    label.innerHTML = `<input type="checkbox" value="${team}"> <span class="team-filter-icon">${getTeamFlag(team)}</span> ${team} - ${getTeamName(team)}`;
+    menu.appendChild(label);
+  });
+  selectedTeamFilters.clear();
+  updateTeamFilterButton();
+  menu.addEventListener('change', () => {
+    const checked = Array.from(menu.querySelectorAll('input:checked')).map(i => i.value);
+    selectedTeamFilters = new Set(checked);
+    updateTeamFilterButton();
+    applyFilters();
+  });
+}
+
+function toggleTeamFilterMenu(){
+  const menu = document.getElementById('teamFilterMenu');
+  menu.classList.toggle('hidden');
+}
+
+function updateTeamFilterButton(){
+  const button = document.getElementById('teamFilterBtn');
+  if (!selectedTeamFilters.size || selectedTeamFilters.size === ALL_TEAMS.length) {
+    button.textContent = 'Todos os times ▾';
+    return;
+  }
+  if (selectedTeamFilters.size === 1) {
+    button.textContent = `${[...selectedTeamFilters][0]} ▾`;
+    return;
+  }
+  button.textContent = `${selectedTeamFilters.size} times selecionados ▾`;
+}
+
+function applyFilters(){
+  const q = document.getElementById('search').value.toUpperCase().trim();
+  const selectedTeams = Array.from(selectedTeamFilters);
+
+  document.querySelectorAll('#missing .team').forEach(el => {
+    const team = el.dataset.team;
+    const matchesSearch = !q || team.includes(q);
+    const matchesTeam = !selectedTeams.length || selectedTeams.includes(team);
+    el.style.display = matchesSearch && matchesTeam ? 'block' : 'none';
+  });
+
+  document.querySelectorAll('#duplicates .team').forEach(el => {
+    const team = el.dataset.team;
+    const matchesSearch = !q || team.includes(q);
+    el.style.display = matchesSearch ? 'block' : 'none';
+  });
+}
+
+function addSelectedMissing(){
+  if (!selectedMissing.size) return;
+  showConfirm('Adicionar selecionadas',
+    `Remover ${selectedMissing.size} figurinha(s) da lista de faltantes?`,
+    () => {
+      let last = null;
+      selectedMissing.forEach(key => {
+        const [team, numStr] = key.split('|');
+        const num = Number(numStr);
+        if (missing[team]) {
+          missing[team] = missing[team].filter(x => x !== num);
+          if (!missing[team].length) delete missing[team];
+          last = { team, num };
+        }
+      });
+      selectedMissing.clear();
+      if (last) undo = last;
+      render();
+    }, 'btn-blue', 'Sim, adicionar');
+}
+
+function applyFilter(v){
+  const q = (v||'').toUpperCase().trim();
+  document.querySelectorAll('.team').forEach(el => {
+    el.style.display = (!q || el.dataset.team.includes(q)) ? 'block' : 'none';
+  });
+}
+
+/* ═══════════════════════════════════════════
+   CONFIRM MODAL
+═══════════════════════════════════════════ */
+function showConfirm(title, text, cb, btnClass='btn-green', btnLabel='Confirmar', cancelCb=null){
+  confirmCallback = cb;
+  cancelCallback = cancelCb; 
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmText').textContent  = text;
+  const ok = document.getElementById('confirmOk');
+  ok.className = `btn btn-sm ${btnClass}`;
+  ok.textContent = btnLabel;
+  ok.onclick = doConfirm;
+  document.getElementById('confirmOverlay').classList.remove('hidden');
+}
+
+function doConfirm(){
+  document.getElementById('confirmOverlay').classList.add('hidden');
+  if (confirmCallback) confirmCallback();
+  confirmCallback = null;
+  cancelCallback = null;
+}
+
+function cancelConfirm(){
+  document.getElementById('confirmOverlay').classList.add('hidden');
+  if (cancelCallback) cancelCallback(); 
+  confirmCallback = null;
+  cancelCallback = null;
+}
+
+/* ═══════════════════════════════════════════
+   CAMERA / SCANNER
+═══════════════════════════════════════════ */
+async function openScanner(){
+  resetScan();
+  document.getElementById('scannerModal').classList.remove('hidden');
+  document.getElementById('scanStatus').textContent = '🔒 Solicitando permissão para acessar a câmera...';
+  document.getElementById('snapBtn').disabled = true;
+
+  try {
+    await requestCameraPermission();
+    camStream = await navigator.mediaDevices.getUserMedia({
+      video:{ facingMode:'environment', width:{ideal:1280}, height:{ideal:720} }
+    });
+    document.getElementById('camVideo').srcObject = camStream;
+    document.getElementById('scanStatus').textContent = 'Câmera pronta. Posicione o verso da figurinha.';
+    document.getElementById('snapBtn').disabled = false;
+  } catch(e){
+    document.getElementById('scanStatus').textContent =
+      '⚠️ Acesso à câmera negado. Permita a câmera no navegador e tente novamente.';
+    document.getElementById('snapBtn').disabled = true;
+  }
+}
+
+async function requestCameraPermission(){
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    throw new Error('API de câmera não suportada');
+  }
+
+  if (navigator.permissions && navigator.permissions.query) {
+    try {
+      const status = await navigator.permissions.query({ name: 'camera' });
+      if (status.state === 'denied') {
+        throw new Error('Permissão negada');
+      }
+    } catch (_err) {}
+  }
+}
+
+function closeScanner(){
+  if (camStream){ camStream.getTracks().forEach(t=>t.stop()); camStream=null; }
+  document.getElementById('scannerModal').classList.add('hidden');
+  resetScan();
+}
+
+function openCollectedModal(){
+  renderCollected();
+  document.getElementById('collectedModal').classList.remove('hidden');
+}
+
+function closeCollectedModal(){
+  document.getElementById('collectedModal').classList.add('hidden');
+}
+
+function renderCollected(){
+  const container = document.getElementById('collectedContent');
+  let html = '';
+
+  ALL_TEAMS.forEach(team => {
+    const lim = getStickerLimits(team);
+    const collected = [];
+    for (let i = lim.min; i <= lim.max; i++) {
+      if (!missing[team] || !missing[team].includes(i)) {
+        collected.push(i);
+      }
+    }
+
+    if (collected.length) {
+      html += `<div class="team" data-team="${team}">
+        <div class="team-title">${getTeamFlag(team)} ${team} - ${getTeamName(team)}</div>
+        <div class="stickers">
+          ${collected.map(n => `<span class="sticker collected">${n}</span>`).join('')}
+        </div>
+      </div>`;
+    }
+  });
+
+  if (!html) {
+    html = '<div class="empty">Nenhuma figurinha colada ainda.</div>';
+  }
+
+  container.innerHTML = html;
+}
+
+function resetScan(){
+  document.getElementById('scanResult').style.display = 'none';
+  document.getElementById('scanStatus').textContent = 'Câmera pronta. Posicione o verso da figurinha.';
+  document.getElementById('snapBtn').disabled = false;
+}
+
+async function snapAndScan(){
+  const video  = document.getElementById('camVideo');
+  const canvas = document.getElementById('snapCanvas');
+  if (!camStream || !video.videoWidth){ return; }
+
+  canvas.width  = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+  const base64  = dataUrl.split(',')[1];
+
+  document.getElementById('snapBtn').disabled = true;
+  document.getElementById('scanStatus').innerHTML = '<span class="spinner"></span> Analisando com IA…';
+  document.getElementById('loadingOverlay').classList.remove('hidden');
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 200,
+        messages:[{
+          role:'user',
+          content:[
+            {
+              type:'image',
+              source:{ type:'base64', media_type:'image/jpeg', data: base64 }
+            },
+            {
+              type:'text',
+              text:'Esta é a foto do VERSO de uma figurinha Panini do álbum FIFA World Cup 2026. No verso há um código com a sigla do país e número. Responda SOMENTE com JSON puro sem markdown, exemplo: {"team":"GHA","num":19}'
+            }
+          ]
+        }]
+      })
+    });
+
+    const data = await resp.json();
+    document.getElementById('loadingOverlay').classList.add('hidden');
+
+    let parsed = null;
+    if (data.content && data.content[0]){
+      try {
+        const raw = data.content[0].text.replace(/```json|```/g,'').trim();
+        parsed = JSON.parse(raw);
+      } catch(err) { console.error(err); }
+    }
+
+    if (parsed && parsed.team && !isNaN(parsed.num)) {
+      const t = parsed.team.toUpperCase();
+      const n = parseInt(parsed.num);
+      
+      if (!ALL_TEAMS.includes(t)) {
+         document.getElementById('scanStatus').textContent = '⚠️ Seleção identificada não faz parte do álbum.';
+         document.getElementById('snapBtn').disabled = false;
+         return;
+      }
+
+      document.getElementById('resSticker').textContent = t + " " + n;
+      const statusEl = document.getElementById('resStatus');
+      const actionsEl = document.getElementById('resActions');
+      
+      document.getElementById('scanResult').style.display = 'block';
+      actionsEl.innerHTML = '';
+
+      if (missing[t] && missing[t].includes(n)) {
+        statusEl.textContent = '❌ Você precisa desta figurinha!';
+        statusEl.className = 'res-status missing';
+        actionsEl.innerHTML = `<button class="btn btn-green btn-sm" onclick="found('${t}',${n}); closeScanner();">Colar no Álbum</button>`;
+      } else {
+        statusEl.textContent = '✅ Você já tem ou é repetida.';
+        statusEl.className = 'res-status found';
+        actionsEl.innerHTML = `<button class="btn btn-orange btn-sm" onclick="addScannedDup('${t}',${n}); closeScanner();">Adicionar às Repetidas</button>`;
+      }
+    } else {
+      document.getElementById('scanStatus').textContent = '⚠️ Não foi possível identificar. Tente focar melhor e repita a leitura.';
+      document.getElementById('snapBtn').disabled = false;
+    }
+  } catch(e) {
+    document.getElementById('loadingOverlay').classList.add('hidden');
+    document.getElementById('scanStatus').textContent = '⚠️ Erro ao conectar com o serviço de IA.';
+    document.getElementById('snapBtn').disabled = false;
+  }
+}
+</script>
+</body>
+</html>
