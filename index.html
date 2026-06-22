@@ -1392,7 +1392,8 @@ async function snapAndScan(){
 
   try {
     const result = await Tesseract.recognize(canvas, 'eng', {
-      tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-:',
+      tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ',
+      tessjs_create_osd: false,
       logger: m => {
         if (m.status === 'recognizing text') {
           document.getElementById('scanStatus').textContent = `🔎 ${Math.round(m.progress * 100)}% reconhecido...`;
@@ -1403,33 +1404,21 @@ async function snapAndScan(){
     const rawText = result.data.text
       .replace(/\n/g, ' ')
       .replace(/\r/g, ' ')
-      .replace(/[^A-Za-z0-9\s]/g, ' ')
+      .replace(/[^A-Z0-9 ]/g, ' ')
       .replace(/\s+/g, ' ')
       .trim()
       .toUpperCase();
     document.getElementById('loadingOverlay').classList.add('hidden');
 
-    const regex = /\b([A-Z]{2,3})\s*[-:]?\s*(\d{1,2})\b/g;
+    const teamRegex = new RegExp(`\\b(${ALL_TEAMS.join('|')})\\s+(\\d{1,2})\\b`, 'g');
     let match;
     let parsed = null;
-    while ((match = regex.exec(rawText)) !== null) {
+    while ((match = teamRegex.exec(rawText)) !== null) {
       const code = match[1].toUpperCase();
       const num = parseInt(match[2], 10);
       if (ALL_TEAMS.includes(code) && !isNaN(num)) {
         parsed = { team: code, num };
         break;
-      }
-    }
-
-    if (!parsed) {
-      const codeMatch = rawText.match(/([A-Za-z]{2,3})/g);
-      const numMatch = rawText.match(/(\d{1,2})/g);
-      if (codeMatch && numMatch) {
-        const codeCandidate = codeMatch.find(c => ALL_TEAMS.includes(c.toUpperCase()));
-        const numCandidate = numMatch.map(n => parseInt(n,10)).find(n => !isNaN(n) && n >= 0 && n <= 99);
-        if (codeCandidate && numCandidate !== undefined) {
-          parsed = { team: codeCandidate.toUpperCase(), num: numCandidate };
-        }
       }
     }
 
