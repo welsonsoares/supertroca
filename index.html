@@ -71,6 +71,7 @@ header{background:linear-gradient(120deg,var(--blue) 0%,#0a3d7c 50%,var(--green)
 .scanner-strip-text strong{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;letter-spacing:1.5px;display:block;color:var(--yellow)}
 .scanner-strip-text span{font-size:.85rem;opacity:.85;display:block;margin-top:6px;line-height:1.4}
 .btn-scan{background:var(--yellow);color:var(--blue);font-weight:700;font-size:.95rem;padding:13px 22px;border-radius:14px;border:2px solid rgba(255,255,255,.28);cursor:pointer;display:flex;align-items:center;gap:10px;transition:transform .1s,opacity .15s,box-shadow .2s;white-space:nowrap;box-shadow:0 12px 28px rgba(0,0,0,.10)}
+.btn-scan.hidden{display:none}
 .btn-scan:hover{opacity:.95;box-shadow:0 14px 32px rgba(0,0,0,.14)}
 .btn-scan:active{transform:scale(.98)}
 
@@ -204,6 +205,7 @@ footer{background:linear-gradient(120deg,var(--blue) 0%,#0a3d7c 60%,var(--green)
 #loadingOverlay{position:fixed;inset:0;background:rgba(0,39,118,.82);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:2000;gap:14px}
 #loadingOverlay.hidden{display:none}
 #loadingOverlay .load-txt{color:#fff;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:2px}
+.spinner{display:inline-block;width:20px;height:20px;border:3px solid rgba(0,0,0,.15);border-top-color:var(--green);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
 .big-spinner{width:52px;height:52px;border:5px solid rgba(255,255,255,.2);border-top-color:var(--yellow);border-radius:50%;animation:spin .9s linear infinite}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@2.1.5/dist/tesseract.min.js"></script>
@@ -298,7 +300,7 @@ footer{background:linear-gradient(120deg,var(--blue) 0%,#0a3d7c 60%,var(--green)
     </div>
 
     <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
-      <button class="btn btn-scan" id="snapBtn" onclick="snapAndScan()">
+      <button class="btn btn-scan hidden" id="snapBtn" onclick="snapAndScan()">
         📸 Escanear Figurinha
       </button>
       <button class="btn btn-ghost btn-sm" onclick="resetScan()">🔄 Nova Leitura</button>
@@ -1243,11 +1245,12 @@ async function openScanner(){
       await video.play().catch(() => {});
       document.getElementById('scanStatus').textContent = 'Câmera pronta. Posicione o verso da figurinha.';
       document.getElementById('snapBtn').disabled = false;
-      setTimeout(() => {
+      if (autoScanTimer) clearInterval(autoScanTimer);
+      autoScanTimer = setInterval(() => {
         if (!document.getElementById('scannerModal').classList.contains('hidden')) {
           snapAndScan();
         }
-      }, 1200);
+      }, 900);
     };
   } catch(e){
     document.getElementById('scanStatus').textContent =
@@ -1329,10 +1332,15 @@ async function snapAndScan(){
   if (!camStream || !video.videoWidth || isAutoScanning){ return; }
   isAutoScanning = true;
 
-  canvas.width  = video.videoWidth;
-  canvas.height = video.videoHeight;
+  const captureWidth = Math.floor(video.videoWidth * 0.6);
+  const captureHeight = Math.floor(video.videoHeight * 0.25);
+  const captureX = Math.floor((video.videoWidth - captureWidth) / 2);
+  const captureY = Math.floor(video.videoHeight * 0.20);
+
+  canvas.width  = captureWidth;
+  canvas.height = captureHeight;
   const ctx = canvas.getContext('2d');
-  ctx.drawImage(video, 0, 0);
+  ctx.drawImage(video, captureX, captureY, captureWidth, captureHeight, 0, 0, captureWidth, captureHeight);
 
   document.getElementById('snapBtn').disabled = true;
   document.getElementById('scanStatus').innerHTML = '<span class="spinner"></span> Reconhecendo texto...';
@@ -1340,6 +1348,7 @@ async function snapAndScan(){
 
   try {
     const result = await Tesseract.recognize(canvas, 'eng', {
+      tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-:',
       logger: m => {
         if (m.status === 'recognizing text') {
           document.getElementById('scanStatus').textContent = `🔎 ${Math.round(m.progress * 100)}% reconhecido...`;
@@ -1407,6 +1416,7 @@ async function snapAndScan(){
     } else {
       document.getElementById('scanStatus').textContent = '🔎 Não foi possível identificar. Ajuste a figurinha e tente novamente.';
       document.getElementById('snapBtn').disabled = false;
+      // A varredura automática mantém a tentativa enquanto o modal estiver aberto.
     }
   } catch(e) {
     console.error(e);
