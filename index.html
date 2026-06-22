@@ -1424,36 +1424,46 @@ function resetScan(){
   document.getElementById('snapBtn').disabled = false;
 }
 
+function promiseTimeout(ms, promise){
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('timeout')), ms);
+    promise.then(value => { clearTimeout(timer); resolve(value); }, err => { clearTimeout(timer); reject(err); });
+  });
+}
+
 async function snapAndScan(){
   const video  = document.getElementById('camVideo');
   const canvas = document.getElementById('snapCanvas');
   if (!camStream || !video.videoWidth || isAutoScanning){ return; }
   isAutoScanning = true;
 
-  const captureWidth = Math.floor(video.videoWidth * 0.6);
-  const captureHeight = Math.floor(video.videoHeight * 0.25);
-  const captureX = Math.floor((video.videoWidth - captureWidth) / 2);
-  const captureY = Math.floor(video.videoHeight * 0.20);
+  const captureWidth = Math.floor(video.videoWidth * 0.32);
+  const captureHeight = Math.floor(video.videoHeight * 0.18);
+  const captureX = Math.floor(video.videoWidth * 0.62);
+  const captureY = Math.floor(video.videoHeight * 0.08);
 
   canvas.width  = captureWidth;
   canvas.height = captureHeight;
   const ctx = canvas.getContext('2d');
+  ctx.filter = 'contrast(1.2) brightness(1.05)';
   ctx.drawImage(video, captureX, captureY, captureWidth, captureHeight, 0, 0, captureWidth, captureHeight);
+  ctx.filter = 'none';
 
   document.getElementById('snapBtn').disabled = true;
   document.getElementById('scanStatus').innerHTML = '<span class="spinner"></span> Reconhecendo texto...';
   document.getElementById('loadingOverlay').classList.remove('hidden');
 
   try {
-    const result = await Tesseract.recognize(canvas, 'eng', {
+    const result = await promiseTimeout(3000, Tesseract.recognize(canvas, 'eng', {
       tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ',
       tessjs_create_osd: false,
+      tessedit_pageseg_mode: 6,
       logger: m => {
         if (m.status === 'recognizing text') {
           document.getElementById('scanStatus').textContent = `🔎 ${Math.round(m.progress * 100)}% reconhecido...`;
         }
       }
-    });
+    }));
 
     const rawText = result.data.text
       .replace(/\n/g, ' ')
@@ -1508,7 +1518,11 @@ async function snapAndScan(){
   } catch(e) {
     console.error(e);
     document.getElementById('loadingOverlay').classList.add('hidden');
-    document.getElementById('scanStatus').textContent = '⚠️ Erro ao processar a imagem do scanner.';
+    if (e && e.message === 'timeout') {
+      document.getElementById('scanStatus').textContent = '⏱️ Tempo de leitura excedido. Ajuste e tente novamente.';
+    } else {
+      document.getElementById('scanStatus').textContent = '⚠️ Erro ao processar a imagem do scanner.';
+    }
     document.getElementById('snapBtn').disabled = false;
   } finally {
     isAutoScanning = false;
