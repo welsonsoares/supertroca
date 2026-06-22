@@ -54,6 +54,15 @@ header{background:linear-gradient(120deg,var(--blue) 0%,#0a3d7c 50%,var(--green)
 .btn-scan:hover{opacity:.95;box-shadow:0 14px 32px rgba(0,0,0,.14)}
 .btn-scan:active{transform:scale(.98)}
 
+.scanner-input-wrap{display:flex;flex-direction:column;gap:10px;flex:1;min-width:220px}
+.scanner-input{width:100%;min-height:72px;border-radius:14px;border:1px solid rgba(255,255,255,.5);padding:14px 16px;font-size:.95rem;resize:vertical}
+.scanner-chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.scanner-chip{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;font-size:.82rem;font-weight:700;white-space:nowrap}
+.scanner-chip.new{background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.25)}
+.scanner-chip.owned{background:rgba(0,156,59,.3);color:#fff;border:1px solid rgba(255,255,255,.25)}
+.scanner-strip-text span{display:block;margin-top:6px;opacity:.88;font-size:.9rem}
+#scannerResultLabel{margin-top:8px;font-size:.82rem;opacity:.85}
+
 /* STATS */
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:16px}
 @media(max-width:600px){.stats{grid-template-columns:repeat(2,1fr)}}
@@ -439,6 +448,28 @@ footer{background:linear-gradient(120deg,var(--blue) 0%,#0a3d7c 60%,var(--green)
     <div class="progress-track">
       <div id="bar" class="progress-fill" style="width:0%"></div>
     </div>
+  </div>
+
+  <div class="scanner-strip">
+    <div class="scanner-strip-text">
+      <strong>Scanner de Figurinhas</strong>
+      <span>Aponte a câmera para a figurinha e capture o texto. O scanner detecta 3 letras do time e 2 números.</span>
+      <span id="scannerResultLabel"></span>
+    </div>
+    <div class="scanner-actions">
+      <button class="btn-scan" onclick="openCamera()">Abrir câmera</button>
+      <button class="btn btn-green btn-sm hidden" id="scannerCaptureBtn" onclick="captureCamera()">Capturar</button>
+      <button class="btn btn-ghost btn-sm hidden" id="scannerStopBtn" onclick="stopCamera()">Fechar câmera</button>
+    </div>
+    <div id="scannerCamera" class="scanner-camera hidden">
+      <video id="scannerVideo" autoplay playsinline muted></video>
+      <canvas id="scannerCanvas" class="hidden"></canvas>
+    </div>
+    <div class="scanner-input-wrap">
+      <textarea id="scannerText" class="scanner-input" placeholder="Ou cole o texto reconhecido aqui..."></textarea>
+      <button class="btn-scan" onclick="scanStickerText()">Scanear</button>
+    </div>
+    <div id="scannerChips" class="scanner-chips"></div>
   </div>
 
   <div class="main-grid">
@@ -880,6 +911,150 @@ function addScannedDup(team, num){
   if (!duplicates[team]) duplicates[team] = {};
   duplicates[team][num] = (duplicates[team][num] || 0) + 1;
   render();
+}
+
+let scannerStream = null;
+
+async function openCamera(){
+  const video = document.getElementById('scannerVideo');
+  const cameraWrap = document.getElementById('scannerCamera');
+  const captureBtn = document.getElementById('scannerCaptureBtn');
+  const stopBtn = document.getElementById('scannerStopBtn');
+  const label = document.getElementById('scannerResultLabel');
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    alert('Câmera não suportada neste navegador.');
+    return;
+  }
+  try {
+    scannerStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}, audio:false});
+    video.srcObject = scannerStream;
+    await video.play();
+    cameraWrap.classList.remove('hidden');
+    captureBtn.classList.remove('hidden');
+    stopBtn.classList.remove('hidden');
+    label.textContent = 'Câmera ativa. Aponte para a figurinha e capture.';
+  } catch (error) {
+    alert('Não foi possível acessar a câmera: ' + (error.message || error));
+  }
+}
+
+function stopCamera(){
+  if (scannerStream) {
+    scannerStream.getTracks().forEach(track => track.stop());
+    scannerStream = null;
+  }
+  const video = document.getElementById('scannerVideo');
+  const cameraWrap = document.getElementById('scannerCamera');
+  const captureBtn = document.getElementById('scannerCaptureBtn');
+  const stopBtn = document.getElementById('scannerStopBtn');
+  const label = document.getElementById('scannerResultLabel');
+  if (video) video.srcObject = null;
+  cameraWrap.classList.add('hidden');
+  captureBtn.classList.add('hidden');
+  stopBtn.classList.add('hidden');
+  label.textContent = '';
+}
+
+async function captureCamera(){
+  const video = document.getElementById('scannerVideo');
+  const canvas = document.getElementById('scannerCanvas');
+  const label = document.getElementById('scannerResultLabel');
+  if (!video || !canvas) return;
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  const recognized = await detectTextFromCanvas(canvas);
+  if (!recognized) {
+    label.textContent = 'Não foi possível reconhecer texto. Tente novamente ou use o campo de texto.';
+    return;
+  }
+  document.getElementById('scannerText').value = recognized;
+  const detections = detectStickerCodes(recognized);
+  renderScannerChips(detections);
+  label.textContent = `Texto detectado: ${recognized}`;
+}
+
+async function detectTextFromCanvas(canvas){
+  if ('TextDetector' in window) {
+    try {
+      const detector = new TextDetector();
+      const results = await detector.detect(canvas);
+      return results.map(item => item.rawValue || item.value || '').join(' ');
+    } catch (error) {
+      console.warn('TextDetector falhou:', error);
+    }
+  }
+  return '';
+}
+
+function scanStickerText(){
+  const input = document.getElementById('scannerText');
+  const text = input ? input.value : '';
+  const detections = detectStickerCodes(text);
+  renderScannerChips(detections);
+}
+
+function detectStickerCodes(text){
+  const normalized = (text || '').toUpperCase().replace(/\n/g, ' ');
+  const validCodes = new Set(ALL_TEAMS.filter(code => code.length === 3));
+  const tokens = normalized.split(/[^A-Z0-9]+/).filter(Boolean);
+  const detections = [];
+
+  function addCode(team, number){
+    if (!validCodes.has(team)) return;
+    const normalizedNumber = number.padStart(2, '0');
+    detections.push(`${team}-${normalizedNumber}`);
+  }
+
+  tokens.forEach(token => {
+    if (/^[A-Z]{3}\d{1,2}$/.test(token)) {
+      addCode(token.slice(0, 3), token.slice(3));
+      return;
+    }
+    if (/^[A-Z]{3}\D+\d{1,2}$/.test(token)) {
+      const match = token.match(/^([A-Z]{3})\D*(\d{1,2})$/);
+      if (match) addCode(match[1], match[2]);
+    }
+  });
+
+  for (let i = 0; i < tokens.length - 1; i++) {
+    const codeToken = tokens[i];
+    const numberToken = tokens[i + 1];
+    if (/^[A-Z]{3}$/.test(codeToken) && /^[0-9]{1,2}$/.test(numberToken)) {
+      addCode(codeToken, numberToken);
+    }
+  }
+
+  return detections;
+}
+
+function renderScannerChips(detections){
+  const chips = document.getElementById('scannerChips');
+  const labelEl = document.getElementById('scannerResultLabel');
+  if (!chips || !labelEl) return;
+  const grouped = detections.reduce((acc, code) => {
+    acc[code] = (acc[code] || 0) + 1;
+    return acc;
+  }, {});
+  const labels = Object.keys(grouped).sort();
+  chips.innerHTML = '';
+
+  if (!labels.length) {
+    labelEl.textContent = 'Nenhum código válido encontrado.';
+    return;
+  }
+
+  labelEl.textContent = `${labels.length} código(s) detectado(s)`;
+  labels.forEach(code => {
+    const [team, num] = code.split('-');
+    const groupCount = grouped[code];
+    const owned = duplicates[team] && duplicates[team][num] > 0;
+    const span = document.createElement('span');
+    span.className = `scanner-chip ${owned ? 'owned' : 'new'}`;
+    span.textContent = groupCount > 1 ? `${code} ×${groupCount}` : code;
+    chips.appendChild(span);
+  });
 }
 
 function openAddDupModal(){
