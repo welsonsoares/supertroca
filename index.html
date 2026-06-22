@@ -35,6 +35,7 @@ img,video,canvas{max-width:100%;height:auto;display:block}
 .scan-corner.bl{bottom:12px;left:12px;border-bottom-width:4px;border-left-width:4px}
 .scan-corner.br{bottom:12px;right:12px;border-bottom-width:4px;border-right-width:4px}
 .scan-line{position:absolute;left:12px;right:12px;height:3px;background:linear-gradient(90deg,transparent,var(--yellow),transparent);animation:scanline 2s ease-in-out infinite}
+.scan-guide{position:absolute;top:8%;right:15%;width:12%;height:10%;border:2px dashed rgba(255,223,0,.95);border-radius:14px;box-shadow:0 0 0 1px rgba(255,223,0,.2);pointer-events:none;}
 @keyframes scanline{0%{top:12px}100%{top:calc(100% - 15px)}}
 canvas#snapCanvas{display:none}
 #scanStatus{font-size:.88rem;color:#555;min-height:22px;margin-bottom:10px}
@@ -354,6 +355,7 @@ footer{background:linear-gradient(120deg,var(--blue) 0%,#0a3d7c 60%,var(--green)
 
     <div id="cameraWrap">
       <video id="camVideo" autoplay playsinline muted></video>
+      <div class="scan-guide"></div>
       <div class="scan-frame">
         <div class="scan-corner tl"></div>
         <div class="scan-corner tr"></div>
@@ -642,6 +644,7 @@ let cancelCallback = null;
 let camStream = null;
 let autoScanTimer = null;
 let isAutoScanning = false;
+let scanAttempts = 0;
 let currentTradeSticker = null;
 let currentAddDupTeam = null;
 let currentAddDupNumber = null;
@@ -1439,6 +1442,62 @@ function resetScan(){
   document.getElementById('manualEntry').classList.remove('visible');
   document.getElementById('scanStatus').textContent = 'Câmera pronta. Posicione o verso da figurinha.';
   document.getElementById('snapBtn').disabled = false;
+  scanAttempts = 0;
+}
+
+function stopScanningAttempts(message){
+  if (autoScanTimer){ clearInterval(autoScanTimer); autoScanTimer = null; }
+  isAutoScanning = false;
+  document.getElementById('manualEntry').classList.add('visible');
+  document.getElementById('scanStatus').textContent = message || '🔎 Dois scans feitos. Cancele ou digite manualmente.';
+  document.getElementById('snapBtn').disabled = false;
+}
+
+function getStickerOcrRegion(video){
+  const captureWidth = Math.floor(video.videoWidth * 0.12);
+  const captureHeight = Math.floor(video.videoHeight * 0.09);
+  const captureX = Math.floor(video.videoWidth * 0.83);
+  const captureY = Math.floor(video.videoHeight * 0.078);
+  return {captureX, captureY, captureWidth, captureHeight};
+}
+
+function parseStickerText(rawText){
+  if (!rawText) return null;
+  const normalized = rawText
+    .replace(/[\n\r]+/g, ' ')
+    .replace(/[^A-Z0-9 ]+/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toUpperCase();
+
+  const teamCodes = ALL_TEAMS.join('|');
+  const teamFirst = new RegExp(`\\b(${teamCodes})\\s*-?\\s*(\\d{1,2})\\b`,'i');
+  const match1 = normalized.match(teamFirst);
+  if (match1) return {team: match1[1].toUpperCase(), num: parseInt(match1[2], 10)};
+
+  const numberFirst = new RegExp(`\\b(\\d{1,2})\\s*-?\\s*(${teamCodes})\\b`,'i');
+  const match2 = normalized.match(numberFirst);
+  if (match2) return {team: match2[2].toUpperCase(), num: parseInt(match2[1], 10)};
+
+  return null;
+}
+
+function showScanResult(team, num){
+  document.getElementById('resSticker').textContent = `${team} ${num}`;
+  const statusEl = document.getElementById('resStatus');
+  const actionsEl = document.getElementById('resActions');
+  document.getElementById('scanResult').style.display = 'block';
+  actionsEl.innerHTML = '';
+
+  if (missing[team] && missing[team].includes(num)) {
+    statusEl.textContent = '❌ Você precisa desta figurinha!';
+    statusEl.className = 'res-status missing';
+    actionsEl.innerHTML = `<button class="btn btn-green btn-sm" onclick="found('${team}',${num}); closeScanner();">Colar no Álbum</button>`;
+  } else {
+    statusEl.textContent = '✅ Você já tem ou é repetida.';
+    statusEl.className = 'res-status found';
+    actionsEl.innerHTML = `<button class="btn btn-orange btn-sm" onclick="addScannedDup('${team}',${num}); closeScanner();">Adicionar às Repetidas</button>`;
+  }
 }
 
 function promiseTimeout(ms, promise){
@@ -1471,14 +1530,11 @@ function confirmManualEntry(){
 async function snapAndScan(){
   const video  = document.getElementById('camVideo');
   const canvas = document.getElementById('snapCanvas');
-  if (!camStream || !video.videoWidth || isAutoScanning){ return; }
+  if (!camStream || !video.videoWidth || isAutoScanning || scanAttempts >= 2){ return; }
   isAutoScanning = true;
+  scanAttempts += 1;
 
-  const captureWidth = Math.floor(video.videoWidth * 0.12);
-  const captureHeight = Math.floor(video.videoHeight * 0.09);
-  const captureX = Math.floor(video.videoWidth * 0.83);
-  const captureY = Math.floor(video.videoHeight * 0.078);
-
+  const { captureX, captureY, captureWidth, captureHeight } = getStickerOcrRegion(video);
   canvas.width  = captureWidth;
   canvas.height = captureHeight;
   const ctx = canvas.getContext('2d');
@@ -1492,7 +1548,7 @@ async function snapAndScan(){
 
   try {
     const result = await promiseTimeout(3000, Tesseract.recognize(canvas, 'eng', {
-      tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ',
+      tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -',
       tessjs_create_osd: false,
       tessedit_pageseg_mode: 6,
       logger: m => {
@@ -1502,67 +1558,32 @@ async function snapAndScan(){
       }
     }));
 
-    const rawText = result.data.text
-      .replace(/\n/g, ' ')
-      .replace(/\r/g, ' ')
-      .replace(/[^A-Z0-9 ]/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .toUpperCase();
     document.getElementById('loadingOverlay').classList.add('hidden');
-
-    const teamRegex = new RegExp(`\\b(${ALL_TEAMS.join('|')})\\s+(\\d{1,2})\\b`, 'g');
-    let match;
-    let parsed = null;
-    while ((match = teamRegex.exec(rawText)) !== null) {
-      const code = match[1].toUpperCase();
-      const num = parseInt(match[2], 10);
-      if (ALL_TEAMS.includes(code) && !isNaN(num)) {
-        parsed = { team: code, num };
-        break;
-      }
-    }
+    const parsed = parseStickerText(result.data.text);
 
     if (parsed && parsed.team && !isNaN(parsed.num)) {
-      const t = parsed.team.toUpperCase();
-      const n = parseInt(parsed.num, 10);
-      if (!ALL_TEAMS.includes(t)) {
-         document.getElementById('scanStatus').textContent = '⚠️ Seleção identificada não faz parte do álbum.';
-         document.getElementById('snapBtn').disabled = false;
-         return;
-      }
-
-      document.getElementById('resSticker').textContent = `${t} ${n}`;
-      const statusEl = document.getElementById('resStatus');
-      const actionsEl = document.getElementById('resActions');
-      document.getElementById('scanResult').style.display = 'block';
-      actionsEl.innerHTML = '';
-
-      if (missing[t] && missing[t].includes(n)) {
-        statusEl.textContent = '❌ Você precisa desta figurinha!';
-        statusEl.className = 'res-status missing';
-        actionsEl.innerHTML = `<button class="btn btn-green btn-sm" onclick="found('${t}',${n}); closeScanner();">Colar no Álbum</button>`;
-      } else {
-        statusEl.textContent = '✅ Você já tem ou é repetida.';
-        statusEl.className = 'res-status found';
-        actionsEl.innerHTML = `<button class="btn btn-orange btn-sm" onclick="addScannedDup('${t}',${n}); closeScanner();">Adicionar às Repetidas</button>`;
-      }
+      if (autoScanTimer){ clearInterval(autoScanTimer); autoScanTimer = null; }
+      showScanResult(parsed.team, parsed.num);
     } else {
-      document.getElementById('scanStatus').textContent = '🔎 Não foi possível identificar. Ajuste a figurinha, cancele ou digite manualmente.';
-      document.getElementById('manualEntry').classList.add('visible');
-      document.getElementById('snapBtn').disabled = false;
-      // A varredura automática mantém a tentativa enquanto o modal estiver aberto.
+      if (scanAttempts >= 2) {
+        stopScanningAttempts('🔎 Não foi possível identificar após 2 tentativas. Cancele ou digite manualmente.');
+      } else {
+        document.getElementById('scanStatus').textContent = '🔎 Reconhecimento incompleto. Ajuste a figurinha e tente novamente.';
+        document.getElementById('snapBtn').disabled = false;
+      }
     }
   } catch(e) {
     console.error(e);
     document.getElementById('loadingOverlay').classList.add('hidden');
-    if (e && e.message === 'timeout') {
-      document.getElementById('scanStatus').textContent = '⏱️ Tempo de leitura excedido. Ajuste e tente novamente.';
+    const message = e && e.message === 'timeout'
+      ? '⏱️ Tempo de leitura excedido.'
+      : '⚠️ OCR falhou. Cancele ou digite manualmente.';
+    if (scanAttempts >= 2) {
+      stopScanningAttempts(`${message} Ajuste ou digite manualmente.`);
     } else {
-      document.getElementById('scanStatus').textContent = '⚠️ Erro ao processar a imagem do scanner. Cancele ou digite manualmente.';
+      document.getElementById('scanStatus').textContent = `${message} Tentativa ${scanAttempts + 1}...`;
+      document.getElementById('snapBtn').disabled = false;
     }
-    document.getElementById('manualEntry').classList.add('visible');
-    document.getElementById('snapBtn').disabled = false;
   } finally {
     isAutoScanning = false;
   }
