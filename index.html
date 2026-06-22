@@ -8,8 +8,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&display=swap');
 :root{--green:#009c3b;--yellow:#ffdf00;--blue:#002776;--white:#fff;--bg:#f0f4f8;--card:#fff;--danger:#e53e3e;--orange:#f6820d;--radius:14px;--shadow:0 4px 18px rgba(0,0,0,.10)}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Inter',Arial,sans-serif;background:var(--bg);color:#1a1a2e;min-height:100vh;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;}
-input,textarea,select,button{user-select:text !important;-webkit-user-select:text !important;-moz-user-select:text !important;-ms-user-select:text !important;}
+body{font-family:'Inter',Arial,sans-serif;background:var(--bg);color:#1a1a2e;min-height:100vh}
 
 /* MODAL */
 .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;z-index:999}
@@ -207,29 +206,7 @@ footer{background:linear-gradient(120deg,var(--blue) 0%,#0a3d7c 60%,var(--green)
 #loadingOverlay .load-txt{color:#fff;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:2px}
 .big-spinner{width:52px;height:52px;border:5px solid rgba(255,255,255,.2);border-top-color:var(--yellow);border-radius:50%;animation:spin .9s linear infinite}
 </style>
-<script>
-  document.addEventListener('contextmenu', event => event.preventDefault());
-  document.addEventListener('copy', event => event.preventDefault());
-  document.addEventListener('cut', event => event.preventDefault());
-  document.addEventListener('paste', event => event.preventDefault());
-  document.addEventListener('selectstart', event => {
-    const tag = event.target.tagName;
-    if (tag !== 'INPUT' && tag !== 'TEXTAREA' && tag !== 'SELECT' && tag !== 'OPTION') {
-      event.preventDefault();
-    }
-  });
-  document.addEventListener('keydown', event => {
-    if (event.ctrlKey && ['u','U','s','S','c','C','x','X'].includes(event.key)) {
-      event.preventDefault();
-    }
-    if (event.ctrlKey && event.shiftKey && ['I','J','C'].includes(event.key)) {
-      event.preventDefault();
-    }
-    if (['F12', 'F5'].includes(event.key)) {
-      event.preventDefault();
-    }
-  });
-</script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@2.1.5/dist/tesseract.min.js"></script>
 </head>
 <body>
 
@@ -1341,62 +1318,61 @@ async function snapAndScan(){
 
   canvas.width  = video.videoWidth;
   canvas.height = video.videoHeight;
-  canvas.getContext('2d').drawImage(video, 0, 0);
-  const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-  const base64  = dataUrl.split(',')[1];
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0);
 
   document.getElementById('snapBtn').disabled = true;
-  document.getElementById('scanStatus').innerHTML = '<span class="spinner"></span> Analisando com IA…';
+  document.getElementById('scanStatus').innerHTML = '<span class="spinner"></span> Reconhecendo texto...';
   document.getElementById('loadingOverlay').classList.remove('hidden');
 
   try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 200,
-        messages:[{
-          role:'user',
-          content:[
-            {
-              type:'image',
-              source:{ type:'base64', media_type:'image/jpeg', data: base64 }
-            },
-            {
-              type:'text',
-              text:'Esta é a foto do VERSO de uma figurinha Panini do álbum FIFA World Cup 2026. No verso há um código com a sigla do país e número. Responda SOMENTE com JSON puro sem markdown, exemplo: {"team":"GHA","num":19}'
-            }
-          ]
-        }]
-      })
+    const result = await Tesseract.recognize(canvas, 'eng', {
+      logger: m => {
+        if (m.status === 'recognizing text') {
+          document.getElementById('scanStatus').textContent = `🔎 ${Math.round(m.progress * 100)}% reconhecido...`;
+        }
+      }
     });
 
-    const data = await resp.json();
+    const rawText = result.data.text.replace(/\n/g, ' ').replace(/\r/g, ' ').trim();
     document.getElementById('loadingOverlay').classList.add('hidden');
 
+    const regex = /([A-Za-z]{2,3})\s*[-:]?\s*(\d{1,2})/g;
+    let match;
     let parsed = null;
-    if (data.content && data.content[0]){
-      try {
-        const raw = data.content[0].text.replace(/```json|```/g,'').trim();
-        parsed = JSON.parse(raw);
-      } catch(err) { console.error(err); }
+    while ((match = regex.exec(rawText)) !== null) {
+      const code = match[1].toUpperCase();
+      const num = parseInt(match[2], 10);
+      if (ALL_TEAMS.includes(code) && !isNaN(num)) {
+        parsed = { team: code, num };
+        break;
+      }
+    }
+
+    if (!parsed) {
+      const codeMatch = rawText.match(/([A-Za-z]{2,3})/g);
+      const numMatch = rawText.match(/(\d{1,2})/g);
+      if (codeMatch && numMatch) {
+        const codeCandidate = codeMatch.find(c => ALL_TEAMS.includes(c.toUpperCase()));
+        const numCandidate = numMatch.map(n => parseInt(n,10)).find(n => !isNaN(n) && n >= 0 && n <= 99);
+        if (codeCandidate && numCandidate !== undefined) {
+          parsed = { team: codeCandidate.toUpperCase(), num: numCandidate };
+        }
+      }
     }
 
     if (parsed && parsed.team && !isNaN(parsed.num)) {
       const t = parsed.team.toUpperCase();
-      const n = parseInt(parsed.num);
-      
+      const n = parseInt(parsed.num, 10);
       if (!ALL_TEAMS.includes(t)) {
          document.getElementById('scanStatus').textContent = '⚠️ Seleção identificada não faz parte do álbum.';
          document.getElementById('snapBtn').disabled = false;
          return;
       }
 
-      document.getElementById('resSticker').textContent = t + " " + n;
+      document.getElementById('resSticker').textContent = `${t} ${n}`;
       const statusEl = document.getElementById('resStatus');
       const actionsEl = document.getElementById('resActions');
-      
       document.getElementById('scanResult').style.display = 'block';
       actionsEl.innerHTML = '';
 
@@ -1414,8 +1390,9 @@ async function snapAndScan(){
       document.getElementById('snapBtn').disabled = false;
     }
   } catch(e) {
+    console.error(e);
     document.getElementById('loadingOverlay').classList.add('hidden');
-    document.getElementById('scanStatus').textContent = '⚠️ Erro ao conectar com o serviço de IA.';
+    document.getElementById('scanStatus').textContent = '⚠️ Erro ao processar a imagem do scanner.';
     document.getElementById('snapBtn').disabled = false;
   }
 }
