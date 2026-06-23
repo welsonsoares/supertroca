@@ -3391,13 +3391,13 @@ let ocrInterval = null;
 let isScanningActive = false;
 let ocrWorker = null;
 
-// Inicialização da IA com configurações agressivas de OCR de linha única
+// Inicialização da inteligência OCR em segundo plano
 async function initOCR() {
   if (!ocrWorker) {
     ocrWorker = await Tesseract.createWorker('eng');
     await ocrWorker.setParameters({
-      tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ', // Apenas o que importa
-      tessedit_pageseg_mode: '7', // Trata o recorte estritamente como uma única linha de texto
+      tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ', // Permite apenas letras, números e espaços
+      tessedit_pageseg_mode: '7', // Força leitura estritamente de linha única
     });
   }
 }
@@ -3409,18 +3409,24 @@ document.getElementById('btnOpenScanner').addEventListener('click', async () => 
   const feedback = document.getElementById('scannerFeedback');
   
   modal.classList.remove('hidden');
-  feedback.innerHTML = "⚡ Ativando lente de alta resolução...";
+  feedback.innerHTML = "⚡ Configurando lente de alta definição...";
+  feedback.style.color = "var(--blue)";
   isScanningActive = true;
 
   if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
     try {
-      // Solicita a maior resolução disponível para dar nitidez máxima às letras pequenas
+      // SOLICITA RESOLUÇÃO MÁXIMA (Full HD ou superior) para nitidez absoluta dos caracteres minúsculos
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { 
           facingMode: "environment", 
-          width: { ideal: 1280 }, 
-          height: { ideal: 720 },
-          advanced: [{ focusMode: "continuous" }] 
+          width: { ideal: 1920 }, // Tenta puxar 1080p nativo
+          height: { ideal: 1080 },
+          frameRate: { ideal: 30 },
+          advanced: [
+            { focusMode: "continuous" }, // Foco cirúrgico contínuo
+            { whiteBalanceMode: "continuous" },
+            { exposureMode: "continuous" }
+          ] 
         }
       });
       
@@ -3428,114 +3434,136 @@ document.getElementById('btnOpenScanner').addEventListener('click', async () => 
       video.srcObject = stream;
       video.play();
       
-      feedback.innerHTML = "🎯 Alinhe o código (Ex: ARG 15) bem no centro da mira...";
-      startUltraSensitivityScanner();
+      feedback.innerHTML = "🎯 Enquadre o código exatamente no retângulo amarelo...";
+      startHighPrecisionSnapshotScanner();
       
     } catch (err) {
-      console.error(err);
-      feedback.innerHTML = "❌ Não foi possível acessar a câmera.";
+      console.error("Erro ao iniciar câmera de alta qualidade:", err);
+      feedback.innerHTML = "❌ Não foi possível carregar a câmera em alta resolução.";
     }
+  } else {
+    alert("Seu dispositivo não suporta esta tecnologia de scanner.");
   }
 });
 
-function startUltraSensitivityScanner() {
+function startHighPrecisionSnapshotScanner() {
   const video = document.getElementById('cameraVideo');
   const canvas = document.getElementById('ocrCanvas');
   const feedback = document.getElementById('scannerFeedback');
   const ctx = canvas.getContext('2d');
 
-  // Intervalo rápido de varredura (250ms)
+  // Roda ciclos rápidos a cada 300ms capturando uma foto estática de alta definição
   ocrInterval = setInterval(async () => {
     if (!isScanningActive || video.readyState !== video.HAVE_CURRENT_DATA || !ocrWorker) return;
 
-    // 1. Define uma área de corte (Crop Box) bem no centro do frame para ignorar os logotipos ao redor
-    // Vamos capturar uma tira central de 60% da largura e apenas 20% da altura
-    const cropWidth = video.videoWidth * 0.60;
-    const cropHeight = video.videoHeight * 0.20;
-    const cropX = (video.videoWidth - cropWidth) / 2;
-    const cropY = (video.videoHeight - cropHeight) / 2;
+    // 1. Obtém as dimensões reais de alta resolução da foto vinda do sensor
+    const videoW = video.videoWidth;
+    const videoH = video.videoHeight;
 
+    // 2. Mapeia as coordenadas exatas da máscara do HTML (65% largura, 28% altura centralizado)
+    const cropWidth = videoW * 0.65;
+    const cropHeight = videoH * 0.28;
+    const cropX = (videoW - cropWidth) / 2;
+    const cropY = (videoH - cropHeight) / 2;
+
+    // Configura o canvas interno para conter apenas o pedaço tirado do retângulo
     canvas.width = cropWidth;
     canvas.height = cropHeight;
     
-    // Desenha apenas o miolo central do vídeo no canvas de processamento
+    // TIRA A FOTO: Recorta com precisão matemática apenas o conteúdo de dentro do retângulo amarelo
     ctx.drawImage(video, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
 
-    // 2. Processamento Digital de Imagem Dinâmico (Filtro Limiar Adaptativo)
+    // 3. Processamento Digital de Imagem Inteligente (Binarização Dinâmica Avançada)
     const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const data = imgData.data;
     
-    // Calcula o brilho médio do frame para se adaptar dinamicamente ao ambiente do usuário
-    let totalBrightness = 0;
+    // Calcula o brilho médio da área recortada para evitar estouros de luz/reflexos
+    let totalBright = 0;
     for (let i = 0; i < data.length; i += 4) {
-      totalBrightness += (0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]);
+      totalBright += (0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2]);
     }
-    const avgBrightness = totalBrightness / (data.length / 4);
-    // Ajusta o ponto de corte com base na iluminação do local (máscara preta e branca extrema)
-    const threshold = avgBrightness * 0.85; 
+    const avgBright = totalBright / (data.length / 4);
+    
+    // Aplica Threshold adaptativo restrito baseado no tom médio local
+    const threshold = avgBright * 0.88;
 
     for (let i = 0; i < data.length; i += 4) {
-      const v = (0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2] < threshold) ? 0 : 255;
-      data[i] = v;     // R
-      data[i + 1] = v; // G
-      data[i + 2] = v; // B
+      const luminance = 0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2];
+      // Converte para preto e branco puros eliminando qualquer sombra ou logotipo cinza de fundo
+      const pixelColor = (luminance < threshold) ? 0 : 255;
+      data[i] = pixelColor;
+      data[i + 1] = pixelColor;
+      data[i + 2] = pixelColor;
     }
     ctx.putImageData(imgData, 0, 0);
 
     try {
-      // 3. Executa a leitura da IA focada na linha limpa obtida
+      // 4. Envia o frame fotográfico tratado para análise da IA
       const { data: { text } } = await ocrWorker.recognize(canvas);
       
-      // Limpeza agressiva e normalização de strings
-      let cleanText = text.replace(/[^A-Z0-9]/g, '').toUpperCase().trim();
+      // Limpeza cirúrgica da resposta da IA
+      let processedText = text.replace(/[^A-Z0-9]/g, '').toUpperCase().trim();
       
-      // Caso a IA leia tudo colado (Ex: "ARG15"), quebra adicionando o espaço obrigatório da sua máscara
-      if (/^([A-Z]{3})(\d{1,2})$/.test(cleanText)) {
-        cleanText = cleanText.replace(/^([A-Z]{3})(\d{1,2})$/, '$1 $2');
+      // Se a IA ler as letras e números juntos (ex: "ARG15" ou "BRA01"), adiciona o espaço da máscara
+      if (/^([A-Z]{3})(\d{1,2})$/.test(processedText)) {
+        processedText = processedText.replace(/^([A-Z]{3})(\d{1,2})$/, '$1 $2');
       }
 
-      console.log("Detectado com filtro de área focado:", cleanText);
+      console.log("Captura Estática Convertida:", processedText);
 
-      // Validação estrita da sua máscara: Exatamente 3 letras + 1 espaço + 1 ou 2 números
-      const regexMascara = /^[A-Z]{3}\s\d{1,2}$/;
+      // Validação Estrita da Máscara: Exatamente 3 Letras + 1 Espaço + 1 ou 2 Números
+      const regexMascaraCompleta = /^[A-Z]{3}\s\d{1,2}$/;
 
-      if (regexMascara.test(cleanText)) {
+      if (regexMascaraCompleta.test(processedText)) {
+        // Pausa varreduras imediatamente para evitar duplicidade
         isScanningActive = false;
         clearInterval(ocrInterval);
         
-        feedback.innerHTML = `✅ Identificado: <strong>${cleanText}</strong>`;
+        feedback.innerHTML = `✅ Reconhecido: <strong>${processedText}</strong>`;
         feedback.style.color = "var(--green)";
         
         playBeep();
         fecharCamera();
         
-        // Dispara o fluxo de verificação se falta ou é repetida no seu álbum
+        // Direciona para a rotina de validação do álbum (Faltantes vs Repetidas)
         if (typeof validarFigurinhaScaneada === "function") {
-            validarFigurinhaScaneada(cleanText);
+            validarFigurinhaScaneada(processedText);
         }
       }
     } catch (err) {
-      console.error("Erro OCR:", err);
+      console.error("Erro ao analisar captura estável:", err);
     }
-  }, 250);
+  }, 300);
 }
     //Final Código do Scanner
   </script>
 
   <div id="cameraModal" class="modal-backdrop hidden">
-  <div class="modal" style="position: relative; max-width: 420px;">
-    <h2>📷 Scanner de Código</h2>
-    <p>Aponte a câmera para o texto impresso no verso (Ex: BRA 5, ARG 00).</p>
+  <div class="modal" style="position: relative; max-width: 440px; padding: 20px;">
+    <h2>📷 Scanner de Alta Precisão</h2>
+    <p style="margin-bottom: 12px; font-size: 0.9rem;">Posicione o código da figurinha exatamente dentro do retângulo amarelo.</p>
     
-    <div style="position: relative; background: #000; border-radius: 12px; overflow: hidden; margin-bottom: 16px; aspect-ratio: 4/3;">
+    <div style="position: relative; background: #000; border-radius: 12px; overflow: hidden; margin-bottom: 16px; aspect-ratio: 4/3; box-shadow: inset 0 0 20px rgba(0,0,0,0.8);">
+      
       <video id="cameraVideo" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
-      <div id="scannerLine" style="position: absolute; left: 0; right: 0; height: 3px; background: #f9c319; top: 0; box-shadow: 0 0 8px #f9c319; animation: scanAnim 1.5s linear infinite;"></div>
+      
+      <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; pointer-events: none;">
+        <div style="position: absolute; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.45);"></div>
+        
+        <div style="position: relative; width: 65%; height: 28%; background: transparent; border: 3px solid #f9c319; border-radius: 12px; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45), inset 0 0 15px rgba(249, 195, 25, 0.3); z-index: 2;">
+          <div style="position: absolute; top: -6px; left: -6px; width: 16px; height: 16px; border-top: 4px solid #fff; border-left: 4px solid #fff;"></div>
+          <div style="position: absolute; top: -6px; right: -6px; width: 16px; height: 16px; border-top: 4px solid #fff; border-right: 4px solid #fff;"></div>
+          <div style="position: absolute; bottom: -6px; left: -6px; width: 16px; height: 16px; border-bottom: 4px solid #fff; border-left: 4px solid #fff;"></div>
+          <div style="position: absolute; bottom: -6px; right: -6px; width: 16px; height: 16px; border-bottom: 4px solid #fff; border-right: 4px solid #fff;"></div>
+        </div>
+      </div>
+
     </div>
 
     <canvas id="ocrCanvas" style="display: none;"></canvas>
 
-    <div id="scannerFeedback" style="font-weight: 600; font-size: 0.95rem; margin-bottom: 12px; color: var(--blue); text-align: center;">
-      Inicializando IA de leitura...
+    <div id="scannerFeedback" style="font-weight: 700; font-size: 0.95rem; margin-bottom: 12px; color: var(--blue); text-align: center; min-height: 24px;">
+      Inicializando leitor óptico...
     </div>
     
     <button id="btnCloseCamera" class="btn btn-sm btn-cancel" style="width: 100%;">
@@ -3543,7 +3571,7 @@ function startUltraSensitivityScanner() {
     </button>
   </div>
 </div>
-
+  
 <style>
 @keyframes scanAnim {
   0% { top: 0%; }
