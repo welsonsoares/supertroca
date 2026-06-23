@@ -4,9 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Super Troca de Cromos – Copa 2026</title>
+<link rel="icon" type="image/png" href="icon.png">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;600;700&display=swap');
-:root{--green:#009c3b;--yellow:#ffdf00;--blue:#002776;--white:#fff;--bg:#f0f4f8;--card:#fff;--danger:#e53e3e;--orange:#f6820d;--radius:14px;--shadow:0 4px 18px rgba(0,0,0,.10)}
+:root{--green:#0f7f36;--yellow:#f9c319;--blue:#0f3f6c;--white:#fff;--bg:#edf3e9;--card:#fff;--danger:#d18b00;--orange:#f6a900;--radius:14px;--shadow:0 4px 18px rgba(0,0,0,.10)}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Inter',Arial,sans-serif;background:var(--bg);color:#1a1a2e;min-height:100vh}
 
@@ -33,7 +34,7 @@ img,video,canvas{max-width:100%;height:auto;display:block}
 .confirm-row{display:flex;gap:10px;justify-content:center}
 
 /* HEADER */
-header{background:linear-gradient(120deg,var(--blue) 0%,#0a3d7c 50%,var(--green) 100%);position:relative;overflow:hidden}
+header{background:linear-gradient(120deg,var(--blue) 0%,#0f5d45 50%,var(--green) 100%);position:relative;overflow:hidden}
 .header-inner{max-width:1200px;margin:auto;padding:24px 18px 20px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
 .header-left h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.5rem,5vw,2.4rem);color:var(--yellow);letter-spacing:3px;line-height:1}
 .header-left .subtitle{color:rgba(255,255,255,.72);font-size:.82rem;margin-top:4px;letter-spacing:.5px}
@@ -68,6 +69,8 @@ header{background:linear-gradient(120deg,var(--blue) 0%,#0a3d7c 50%,var(--green)
 @media(max-width:600px){.stats{grid-template-columns:repeat(2,1fr)}}
 .stat-card{background:var(--card);border-radius:var(--radius);padding:18px 16px 16px;box-shadow:var(--shadow);position:relative;overflow:hidden;min-height:120px}
 .stat-card::before{content:'';position:absolute;bottom:0;left:0;right:0;height:4px}
+.stat-value.clickable{cursor:pointer;transition:color .2s;}
+.stat-value.clickable:hover{color:var(--blue);}
 .stat-card.miss::before{background:var(--yellow)}
 .stat-card.dup::before{background:var(--green)}
 .stat-card.prog::before{background:var(--blue)}
@@ -94,17 +97,21 @@ header{background:linear-gradient(120deg,var(--blue) 0%,#0a3d7c 50%,var(--green)
 .team-dropdown{position:relative}
 .team-dropdown-toggle{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 16px;border-radius:18px;border:1px solid rgba(66,153,225,.2);background:#fff;color:#223248;font-size:.95rem;cursor:pointer;box-shadow:var(--shadow);transition:border-color .2s,box-shadow .2s}
 .team-dropdown-toggle:hover{border-color:var(--green);box-shadow:0 0 0 8px rgba(0,156,59,.08)}
-.team-dropdown-menu{position:absolute;top:calc(100% + 8px);left:0;right:0;z-index:20;background:#fff;border:1px solid rgba(66,153,225,.2);border-radius:18px;box-shadow:0 18px 30px rgba(0,0,0,.12);max-height:260px;overflow:auto;padding:10px;}
+.team-dropdown-menu{position:absolute;top:calc(100% + 8px);left:0;right:0;z-index:20;background:#fff;border:1px solid rgba(66,153,225,.2);border-radius:18px;box-shadow:0 18px 30px rgba(0,0,0,.12);max-height:260px;overflow:auto;padding:10px 10px 18px;}
 .team-dropdown-menu.hidden{display:none}
 .team-dropdown-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:12px;cursor:pointer;transition:background .2s}
 .team-dropdown-item:hover{background:rgba(0,156,59,.08)}
 .team-dropdown-item.duplicate{color:#b11;background:rgba(229,62,62,.08)}
 .team-dropdown-item input{accent-color:var(--green);}
-.team-dropdown-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;margin-top:10px}
+.team-dropdown-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;margin-top:10px;position:sticky;bottom:0;background:rgba(255,255,255,.95);padding:10px;box-shadow:0 -6px 16px rgba(0,0,0,.08);backdrop-filter:blur(10px);transition:opacity .2s;opacity:.75}
+.team-dropdown-actions:hover{opacity:1}
+.team-dropdown-actions button{opacity:.85;transition:opacity .2s}
+.team-dropdown-actions button:hover{opacity:1}
 .dup-count-badge{margin-left:auto;padding:2px 8px;border-radius:999px;background:#d32f2f;color:#fff;font-size:.78rem;font-weight:700;min-width:28px;text-align:center}
 .team-filter-icon{font-size:1rem;display:inline-flex;width:20px;text-align:center;margin-right:10px}
-.brand-mark{display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;margin-right:10px;border-radius:14px;background:var(--green);color:#fff;font-size:.95rem;font-weight:800;box-shadow:0 12px 26px rgba(0,0,0,.18)}
-.field-icon{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;background:rgba(0,156,59,.1);border-radius:8px;font-size:0.95rem;margin-right:8px}
+.brand-mark{display:inline-flex;align-items:center;justify-content:center;width:52px;height:52px;margin-right:12px;border-radius:18px;box-shadow:0 16px 32px rgba(0,0,0,.18);overflow:hidden}
+.brand-mark img{width:100%;height:100%;object-fit:cover;display:block}
+.field-icon{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;background:rgba(15,127,54,.12);border-radius:8px;font-size:0.95rem;margin-right:8px}
 .team-filter-wrap{margin-bottom:26px}
 .team-dropdown-toggle{text-align:left}
 .complete-team-row{margin-top:14px;padding-top:12px;border-top:1px solid rgba(0,0,0,.05)}
@@ -205,6 +212,8 @@ header{background:linear-gradient(120deg,var(--blue) 0%,#0a3d7c 50%,var(--green)
 .panel{background:var(--card);border-radius:var(--radius);padding:20px 18px;box-shadow:var(--shadow);border:1px solid rgba(0,0,0,.05)}
 .panel-header{font-family:'Bebas Neue',sans-serif;font-size:1.25rem;letter-spacing:2px;color:var(--blue);margin-bottom:16px;display:flex;align-items:center;gap:8px}
 .panel-count{background:var(--blue);color:#fff;font-family:'Inter',sans-serif;font-size:.75rem;font-weight:700;padding:4px 11px;border-radius:22px;margin-left:auto}
+.panel-count.clickable{cursor:pointer;transition:color .2s;}
+.panel-count.clickable:hover{color:var(--yellow);}
 
 /* TEAM */
 .team{margin-bottom:16px;border-radius:16px;border:1px solid rgba(0,0,0,.06);background:#fbfdff;padding:12px}
@@ -249,6 +258,30 @@ header{background:linear-gradient(120deg,var(--blue) 0%,#0a3d7c 50%,var(--green)
 
 /* NEW ALBUM */
 .new-album-btn-wrap{text-align:center;margin-top:26px}
+
+.view-section{display:block}
+.view-section.hidden{display:none}
+.wrap{max-width:1200px;margin:auto;padding:18px 13px 36px;padding-bottom:110px}
+.bottom-nav{background:rgba(255,255,255,.96);border-top:1px solid rgba(0,0,0,.08);display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:10px 12px;box-shadow:0 -12px 26px rgba(0,0,0,.08);position:fixed;bottom:0;left:0;right:0;z-index:30;backdrop-filter:blur(12px)}
+.nav-item{background:#fff;border:1px solid rgba(66,153,225,.22);border-radius:14px;color:#223248;font-size:.82rem;font-weight:700;padding:12px 8px;display:flex;align-items:center;justify-content:center;text-align:center;cursor:pointer;transition:background .2s,border-color .2s,color .2s,opacity .2s;white-space:normal;line-height:1.2;opacity:.75}
+.nav-item:hover{opacity:1}
+.nav-item.active{background:var(--blue);border-color:var(--blue);color:#fff;opacity:1}
+.backup-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.backup-card{background:#fff;border-radius:18px;padding:18px;box-shadow:var(--shadow);border:1px solid rgba(66,153,225,.14)}
+.backup-card h3{font-size:1rem;margin-bottom:10px;color:var(--blue)}
+.backup-card p{font-size:.9rem;color:#555;margin-bottom:14px;line-height:1.5}
+#backupText{width:100%;min-height:140px;border:1px solid rgba(66,153,225,.25);border-radius:16px;padding:14px;font-family:'Inter',sans-serif;font-size:.95rem;resize:vertical;}
+.backup-actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.backup-actions input[type=file]{flex:1}
+.backup-note{margin-top:16px;font-size:.86rem;color:#555;line-height:1.5;padding:0 4px}
+.album-team{background:#fff;border-radius:18px;border:1px solid rgba(0,0,0,.08);padding:16px;margin-bottom:14px;box-shadow:var(--shadow)}
+.album-team-header{font-weight:700;color:var(--blue);margin-bottom:8px}
+.album-team-stats{font-size:.92rem;color:#444;margin-bottom:10px}
+.album-team-bar{height:10px;background:#e7eef8;border-radius:999px;overflow:hidden;margin-bottom:10px}
+.album-team-bar div{height:100%;background:linear-gradient(90deg,var(--blue),var(--green),var(--yellow));border-radius:999px}
+.album-team-missing{font-size:.85rem;color:#555}
+@media(max-width:900px){.backup-grid{grid-template-columns:1fr}}
+@media(max-width:680px){.bottom-nav{grid-template-columns:repeat(3,1fr);overflow-x:auto;padding:12px 6px} .nav-item{font-size:.78rem;padding:10px 6px} }
 
 /* FOOTER */
 footer{background:linear-gradient(120deg,var(--blue) 0%,#0a3d7c 60%,var(--green) 100%);margin-top:40px;padding:26px 18px;text-align:center}
@@ -395,7 +428,7 @@ footer{background:linear-gradient(120deg,var(--blue) 0%,#0a3d7c 60%,var(--green)
 <header>
   <div class="header-inner">
     <div class="header-left">
-      <h1><span class="brand-mark">WS</span> Super Troca de Cromos</h1>
+      <h1><span class="brand-mark"><img src="icon.png" alt="Ícone do sistema"></span> Super Troca de Cromos</h1>
       <div class="subtitle">Álbum Copa do Mundo 2026</div>
     </div>
     <div class="collector-badge" onclick="editName()" title="Clique para editar seu nome">
@@ -407,99 +440,125 @@ footer{background:linear-gradient(120deg,var(--blue) 0%,#0a3d7c 60%,var(--green)
 </header>
 
 <div class="wrap">
-
-
-  <div class="stats">
-    <div class="stat-card miss">
-      <div class="stat-label"><span class="field-icon">❌</span> Faltantes</div>
-      <div class="stat-value" id="mc">0</div>
-      <div class="stat-sub">figurinhas</div>
-    </div>
-    <div class="stat-card dup">
-      <div class="stat-label"><span class="field-icon">🔄</span> Repetidas</div>
-      <div class="stat-value" id="dc">0</div>
-      <div class="stat-sub">para trocar</div>
-    </div>
-    <div class="stat-card prog">
-      <div class="stat-label"><span class="field-icon">📈</span> Progresso</div>
-      <div class="stat-value" id="pc">0%</div>
-      <div class="stat-sub">do álbum</div>
-    </div>
-    <div class="stat-card complete">
-      <div class="stat-label">Times completos</div>
-      <div class="stat-value" id="tc">0</div>
-      <div class="stat-sub">grupos completos</div>
-      <div class="stat-list" id="tcList" style="margin-top:8px;font-size:.72rem;color:#555;line-height:1.3;max-height:70px;overflow:auto"></div>
-      <div class="stat-sub" style="margin-top:10px;font-size:.78rem;font-weight:700;color:#444">Times com 80%+ completos</div>
-      <div class="stat-list" id="nearCompleteList" style="margin-top:6px;font-size:.72rem;color:#555;line-height:1.3;max-height:70px;overflow:auto"></div>
-    </div>
-    <div class="stat-card total">
-      <div class="stat-label"><span class="field-icon">✅</span> Coletadas</div>
-      <div class="stat-value" id="cc">0</div>
-      <div class="stat-sub">de <span id="lblTotal">994</span></div>
-    </div>
-  </div>
-
-  <div class="progress-wrap">
-    <div class="progress-label">
-      <span id="progName">Álbum de …</span>
-      <span id="progPct">0%</span>
-    </div>
-    <div class="progress-track">
-      <div id="bar" class="progress-fill" style="width:0%"></div>
-    </div>
-  </div>
-<!---
-  <div class="scanner-strip">
-    <div class="scanner-strip-text">
-      <strong>Scanner de Figurinhas</strong>
-      <span>EM breve, fase de testes.</span>
-      <span id="scannerResultLabel"></span>
-    </div>
-    <div class="scanner-actions">
-      <button class="btn-scan" disabled>Em testes</button>
-      <button class="btn btn-green btn-sm hidden" id="scannerCaptureBtn" onclick="captureCamera()" disabled>Capturar</button>
-      <button class="btn btn-ghost btn-sm hidden" id="scannerStopBtn" onclick="stopCamera()" disabled>Fechar câmera</button>
-    </div>
-    <div id="scannerCamera" class="scanner-camera hidden">
-      <video id="scannerVideo" autoplay playsinline muted></video>
-      <canvas id="scannerCanvas" class="hidden"></canvas>
-    </div>
-    <div class="scanner-input-wrap">
-      <textarea id="scannerText" class="scanner-input" placeholder="Scanner em breve..."></textarea>
-      <button class="btn-scan" onclick="scanStickerText()" disabled>Scanear</button>
-    </div>
-    <div id="scannerChips" class="scanner-chips"></div>
-  </div>
---->
-  <div class="main-grid">
-    <div class="panel">
-      <div class="panel-header">❌ Faltantes<span class="panel-count" id="mc2">0</span></div>
-      <div class="team-filter-wrap" style="margin-bottom:18px;">
-        <label for="teamFilterBtn">Filtrar times faltantes</label>
-        <div class="team-dropdown">
-          <button id="teamFilterBtn" type="button" class="team-dropdown-toggle" onclick="toggleTeamFilterMenu()">Todos os times ▾</button>
-          <div id="teamFilterMenu" class="team-dropdown-menu hidden"></div>
+  <div class="views">
+    <section id="homeView" class="view-section active">
+      <div class="stats">
+        <div class="stat-card miss">
+          <div class="stat-label"><span class="field-icon">❌</span> Faltantes</div>
+          <div class="stat-value clickable" id="mc" onclick="showMissingTeams()">0</div>
+          <div class="stat-sub">figurinhas</div>
+        </div>
+        <div class="stat-card dup">
+          <div class="stat-label"><span class="field-icon">🔄</span> Repetidas</div>
+          <div class="stat-value clickable" id="dc" onclick="showDuplicateTeams()">0</div>
+          <div class="stat-sub">para trocar</div>
+        </div>
+        <div class="stat-card prog">
+          <div class="stat-label"><span class="field-icon">📈</span> Progresso</div>
+          <div class="stat-value clickable" id="pc" onclick="showAlbumTeams()">0%</div>
+          <div class="stat-sub">do álbum</div>
+        </div>
+        <div class="stat-card complete">
+          <div class="stat-label">Times completos</div>
+          <div class="stat-value clickable" id="tc" onclick="showCompletedTeams()">0</div>
+          <div class="stat-sub">grupos completos</div>
+          <div class="stat-list" id="tcList" style="margin-top:8px;font-size:.72rem;color:#555;line-height:1.3;max-height:70px;overflow:auto"></div>
+          <div class="stat-sub" style="margin-top:10px;font-size:.78rem;font-weight:700;color:#444">Times com 80%+ completos</div>
+          <div class="stat-list" id="nearCompleteList" style="margin-top:6px;font-size:.72rem;color:#555;line-height:1.3;max-height:70px;overflow:auto"></div>
+        </div>
+        <div class="stat-card total">
+          <div class="stat-label"><span class="field-icon">✅</span> Coletadas</div>
+          <div class="stat-value clickable" id="cc" onclick="showAlbumTeams()">0</div>
+          <div class="stat-sub">de <span id="lblTotal">994</span></div>
         </div>
       </div>
-      <div id="missing"></div>
-    </div>
-    <div class="panel">
-      <div class="panel-header">🔄 Repetidas<span class="panel-count" id="dc2">0</span></div>
-      <div class="team-filter-wrap" style="margin-bottom:18px;">
-        <label for="dupFilterBtn">Filtrar times com repetidas</label>
-        <div class="team-dropdown">
-          <button id="dupFilterBtn" type="button" class="team-dropdown-toggle" onclick="toggleTeamFilterMenu('duplicate')">Todos os times ▾</button>
-          <div id="dupFilterMenu" class="team-dropdown-menu hidden"></div>
+
+      <div class="progress-wrap">
+        <div class="progress-label">
+          <span id="progName">Álbum de …</span>
+          <span id="progPct">0%</span>
+        </div>
+        <div class="progress-track">
+          <div id="bar" class="progress-fill" style="width:0%"></div>
         </div>
       </div>
-      
-      <div id="duplicates"></div>
-      <div class="add-form">
-        <button class="btn btn-green btn-sm" onclick="openAddDupModal()">+ Adicionar repetidas</button>
-        <button class="btn btn-blue btn-sm" onclick="share()">WhatsApp</button>
+    </section>
+
+    <section id="missingView" class="view-section hidden">
+      <div class="panel">
+        <div class="panel-header">❌ Faltantes<span class="panel-count" id="mc2">0</span></div>
+        <div class="team-filter-wrap" style="margin-bottom:18px;">
+          <label for="teamFilterBtn">Filtrar times faltantes</label>
+          <div class="team-dropdown">
+            <button id="teamFilterBtn" type="button" class="team-dropdown-toggle" onclick="toggleTeamFilterMenu()">Todos os times ▾</button>
+            <div id="teamFilterMenu" class="team-dropdown-menu hidden"></div>
+          </div>
+        </div>
+        <div id="missing"></div>
       </div>
-    </div>
+    </section>
+
+    <section id="duplicatesView" class="view-section hidden">
+      <div class="panel">
+        <div class="panel-header">🔄 Repetidas<span class="panel-count clickable" id="dc2" onclick="showDuplicateTeams()" title="Clique para filtrar os times com repetidas">0</span></div>
+        <div class="team-filter-wrap" style="margin-bottom:18px;">
+          <label for="dupFilterBtn">Filtrar times com repetidas</label>
+          <div class="team-dropdown">
+            <button id="dupFilterBtn" type="button" class="team-dropdown-toggle" onclick="toggleTeamFilterMenu('duplicate')">Todos os times ▾</button>
+            <div id="dupFilterMenu" class="team-dropdown-menu hidden"></div>
+          </div>
+        </div>
+        <div id="duplicates"></div>
+        <div class="add-form">
+          <button class="btn btn-green btn-sm" onclick="openAddDupModal()">+ Adicionar repetidas</button>
+          <button class="btn btn-blue btn-sm" onclick="share()">WhatsApp</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="albumView" class="view-section hidden">
+      <div class="panel">
+        <div class="panel-header">📘 Meu Álbum</div>
+        <div class="team-filter-wrap" style="margin-bottom:18px;">
+          <label for="albumFilterBtn">Filtrar times no álbum</label>
+          <div class="team-dropdown">
+            <button id="albumFilterBtn" type="button" class="team-dropdown-toggle" onclick="toggleTeamFilterMenu('album')">Todos os times ▾</button>
+            <div id="albumFilterMenu" class="team-dropdown-menu hidden"></div>
+          </div>
+        </div>
+        <div id="albumContent"></div>
+      </div>
+    </section>
+    <section id="completedView" class="view-section hidden">
+      <div class="panel">
+        <div class="panel-header">🏁 Times completos</div>
+        <div id="completedTeamsList"></div>
+      </div>
+    </section>
+
+    <section id="backupView" class="view-section hidden">
+      <div class="panel">
+        <div class="panel-header">💾 Backup e Importação</div>
+        <div class="backup-grid">
+          <div class="backup-card">
+            <h3>Exportar</h3>
+            <p>Salve seu álbum em CSV para preservar seus dados.</p>
+            <button class="btn btn-green" onclick="downloadBackupCSV()">Exportar CSV</button>
+            <button class="btn btn-blue" onclick="openGoogleDriveBackup()">Salvar no Google Drive</button>
+          </div>
+          <div class="backup-card">
+            <h3>Importar</h3>
+            <p>Cole o conteúdo do backup CSV aqui ou carregue um arquivo.</p>
+            <textarea id="backupText" placeholder="Cole o CSV de backup aqui..." rows="8"></textarea>
+            <div class="backup-actions">
+              <input id="backupFileInput" type="file" accept=".csv,.json" onchange="loadBackupFile(event)">
+              <button class="btn btn-blue" onclick="importBackupFromText()">Importar</button>
+            </div>
+          </div>
+        </div>
+        <div class="backup-note">A integração direta com Google Drive está em desenvolvimento. Você pode exportar o arquivo e salvar manualmente no Drive.</div>
+      </div>
+    </section>
   </div>
 
   <div class="undo-panel">
@@ -517,6 +576,13 @@ footer{background:linear-gradient(120deg,var(--blue) 0%,#0a3d7c 60%,var(--green)
     <div style="font-size:.76rem;color:#aaa;margin-top:7px">Apaga todos os dados e reinicia do zero</div>
   </div>
 
+  <div class="bottom-nav">
+    <button class="nav-item active" data-view="homeView">Inicio</button>
+    <button class="nav-item" data-view="missingView">Faltantes (FT)</button>
+    <button class="nav-item" data-view="duplicatesView">Repetidas (RP)</button>
+    <button class="nav-item" data-view="albumView">Meu Álbum</button>
+    <button class="nav-item" data-view="backupView">Backup</button>
+  </div>
 </div>
 
 <footer>
@@ -526,7 +592,7 @@ footer{background:linear-gradient(120deg,var(--blue) 0%,#0a3d7c 60%,var(--green)
     <div class="footer-divider"></div>
     <div class="footer-dates">
       <div class="footer-date-item">📅 Criado em <strong>19 de junho de 2025</strong></div>
-      <div class="footer-date-item">🔄 Atualizado em <strong>22 de junho de 2026</strong></div>
+      <div class="footer-date-item">🔄 Atualizado em <strong>23 de junho de 2026</strong></div>
     </div>
   </div>
 </footer>
@@ -595,10 +661,12 @@ let currentTradeSticker = null;
 let currentAddDupTeam = null;
 let currentAddDupNumber = null;
 let selectedMissing = new Set();
-let selectedMissingTeamFilters = new Set(ALL_TEAMS);
+let selectedMissingTeamFilters = new Set();
 let pendingMissingTeamFilters = new Set(selectedMissingTeamFilters);
-let selectedDuplicateTeamFilters = new Set(ALL_TEAMS);
+let selectedDuplicateTeamFilters = new Set();
 let pendingDuplicateTeamFilters = new Set(selectedDuplicateTeamFilters);
+let selectedAlbumTeamFilters = new Set();
+let pendingAlbumTeamFilters = new Set(selectedAlbumTeamFilters);
 let pendingDupSelections = {};
 
 function loadFilterSet(key, defaultTeams) {
@@ -617,15 +685,25 @@ function saveFilterSet(key, filterSet) {
 }
 
 function loadTeamFilters() {
-  selectedMissingTeamFilters = loadFilterSet('missingTeamFilters', ALL_TEAMS);
+  selectedMissingTeamFilters = loadFilterSet('missingTeamFilters', []);
   pendingMissingTeamFilters = new Set(selectedMissingTeamFilters);
-  selectedDuplicateTeamFilters = loadFilterSet('duplicateTeamFilters', ALL_TEAMS);
+  selectedDuplicateTeamFilters = loadFilterSet('duplicateTeamFilters', []);
   pendingDuplicateTeamFilters = new Set(selectedDuplicateTeamFilters);
+  selectedAlbumTeamFilters = loadFilterSet('albumTeamFilters', []);
+  pendingAlbumTeamFilters = new Set(selectedAlbumTeamFilters);
 }
 
 function saveTeamFilter(filterType) {
-  const key = filterType === 'duplicate' ? 'duplicateTeamFilters' : 'missingTeamFilters';
-  const selected = filterType === 'duplicate' ? selectedDuplicateTeamFilters : selectedMissingTeamFilters;
+  const key = filterType === 'duplicate'
+    ? 'duplicateTeamFilters'
+    : filterType === 'album'
+      ? 'albumTeamFilters'
+      : 'missingTeamFilters';
+  const selected = filterType === 'duplicate'
+    ? selectedDuplicateTeamFilters
+    : filterType === 'album'
+      ? selectedAlbumTeamFilters
+      : selectedMissingTeamFilters;
   saveFilterSet(key, selected);
 }
 
@@ -672,6 +750,7 @@ window.addEventListener('DOMContentLoaded', () => {
   populateTradeSelect();
   populateTeamFilter('missing');
   populateTeamFilter('duplicate');
+  populateTeamFilter('album');
   if (collectorName) {
     document.getElementById('overlay').classList.add('hidden');
     applyName(collectorName);
@@ -683,6 +762,7 @@ window.addEventListener('DOMContentLoaded', () => {
   }
   const dupSearch = document.getElementById('duplicatesSearch');
   if (dupSearch) dupSearch.addEventListener('input', () => applyFilters());
+  setupNavigation();
   document.addEventListener('click', event => {
     if (!event.target.closest('.team-dropdown')) {
       document.querySelectorAll('.team-dropdown-menu').forEach(menu => menu.classList.add('hidden'));
@@ -696,6 +776,116 @@ window.addEventListener('DOMContentLoaded', () => {
     if (document.visibilityState === 'hidden') save();
   });
 });
+
+function setupNavigation(){
+  document.querySelectorAll('.nav-item').forEach(btn => {
+    btn.addEventListener('click', () => switchView(btn.dataset.view));
+  });
+}
+
+function switchView(viewId){
+  document.querySelectorAll('.view-section').forEach(section => {
+    section.classList.toggle('hidden', section.id !== viewId);
+  });
+  document.querySelectorAll('.nav-item').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.view === viewId);
+  });
+  if (viewId === 'albumView') renderAlbumView();
+}
+
+function renderAlbumView(){
+  const container = document.getElementById('albumContent');
+  if (!container) return;
+  const selectedTeams = ALL_TEAMS.filter(team => selectedAlbumTeamFilters.has(team));
+  const html = selectedTeams.map(team => {
+    const lim = getStickerLimits(team);
+    const total = lim.max - lim.min + 1;
+    const missingList = missing[team] || [];
+    const collectedCount = total - missingList.length;
+    const progress = total ? Math.round((collectedCount / total) * 100) : 0;
+    const displayMissing = missingList.slice(0, 10).join(', ');
+    return `<div class="album-team">
+      <div class="album-team-header">${getTeamFlag(team)} ${team} - ${getTeamName(team)}</div>
+      <div class="album-team-stats">${collectedCount}/${total} coladas • ${progress}% completo</div>
+      <div class="album-team-bar"><div style="width:${progress}%"></div></div>
+      ${missingList.length ? `<div class="album-team-missing">Faltam: ${displayMissing}${missingList.length > 10 ? ' ...' : ''}</div>` : '<div class="album-team-missing">Time completo!</div>'}
+    </div>`;
+  }).join('');
+  container.innerHTML = html || '<div class="empty">Nenhum time selecionado para exibir.</div>';
+}
+
+function downloadBackupCSV(){
+  const rows = ['type,team,number,count'];
+  ALL_TEAMS.forEach(team => {
+    if (missing[team] && missing[team].length > 0) {
+      missing[team].forEach(num => rows.push(`MISSING,${team},${num},`));
+    }
+    if (duplicates[team]) {
+      Object.keys(duplicates[team]).sort((a,b)=>a-b).forEach(num => {
+        rows.push(`DUPLICATE,${team},${num},${duplicates[team][num]}`);
+      });
+    }
+  });
+  const content = rows.join('\n');
+  const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = `backup-cromos-${(collectorName||'album').replace(/\s+/g,'_').toLowerCase()}-${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  URL.revokeObjectURL(url);
+}
+
+function openGoogleDriveBackup(){
+  alert('Exportar CSV e salve manualmente no Google Drive. Integração direta está em desenvolvimento.');
+  window.open('https://drive.google.com/drive/my-drive', '_blank');
+}
+
+function loadBackupFile(event){
+  const file = event.target.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    document.getElementById('backupText').value = reader.result || '';
+  };
+  reader.readAsText(file, 'utf-8');
+}
+
+function importBackupFromText(){
+  const raw = document.getElementById('backupText').value.trim();
+  if (!raw) {
+    alert('Cole o backup CSV ou JSON antes de importar.');
+    return;
+  }
+  const lines = raw.split(/\r?\n/).map(line => line.trim()).filter(line => line);
+  const newMissing = {};
+  const newDuplicates = {};
+  lines.forEach((line, index) => {
+    if (index === 0 && /^type[,;\t]/i.test(line)) return;
+    const parts = line.split(/[,;\t]+/).map(part => part.trim());
+    if (parts.length < 3) return;
+    const type = parts[0].toUpperCase();
+    const team = parts[1].toUpperCase();
+    const num = Number(parts[2]);
+    const count = Number(parts[3] || 1) || 1;
+    if (!ALL_TEAMS.includes(team) || Number.isNaN(num)) return;
+    if (type === 'MISSING') {
+      newMissing[team] = newMissing[team] || [];
+      if (!newMissing[team].includes(num)) newMissing[team].push(num);
+    } else if (type === 'DUPLICATE') {
+      newDuplicates[team] = newDuplicates[team] || {};
+      newDuplicates[team][num] = (newDuplicates[team][num] || 0) + count;
+    }
+  });
+  Object.keys(newMissing).forEach(team => newMissing[team].sort((a,b)=>a-b));
+  missing = newMissing;
+  duplicates = newDuplicates;
+  save();
+  render();
+  alert('Backup importado com sucesso.');
+}
 
 function startApp(){
   const v = document.getElementById('nameInput').value.trim();
@@ -1351,11 +1541,21 @@ function updateMissingSelectionUI(){
 
 function getTeamFilterState(filterType){
   return {
-    get selected(){ return filterType === 'duplicate' ? selectedDuplicateTeamFilters : selectedMissingTeamFilters; },
-    get pending(){ return filterType === 'duplicate' ? pendingDuplicateTeamFilters : pendingMissingTeamFilters; },
+    get selected(){
+      if (filterType === 'duplicate') return selectedDuplicateTeamFilters;
+      if (filterType === 'album') return selectedAlbumTeamFilters;
+      return selectedMissingTeamFilters;
+    },
+    get pending(){
+      if (filterType === 'duplicate') return pendingDuplicateTeamFilters;
+      if (filterType === 'album') return pendingAlbumTeamFilters;
+      return pendingMissingTeamFilters;
+    },
     setPending(value){
       if (filterType === 'duplicate') {
         pendingDuplicateTeamFilters = value;
+      } else if (filterType === 'album') {
+        pendingAlbumTeamFilters = value;
       } else {
         pendingMissingTeamFilters = value;
       }
@@ -1363,6 +1563,8 @@ function getTeamFilterState(filterType){
     setSelected(value){
       if (filterType === 'duplicate') {
         selectedDuplicateTeamFilters = value;
+      } else if (filterType === 'album') {
+        selectedAlbumTeamFilters = value;
       } else {
         selectedMissingTeamFilters = value;
       }
@@ -1375,8 +1577,75 @@ function getDuplicateTeamCount(team){
   return Object.values(duplicates[team]).reduce((sum, count) => sum + count, 0);
 }
 
+function showMissingTeams(){
+  const teamsWithMissing = ALL_TEAMS.filter(team => missing[team] && missing[team].length > 0);
+  if (!teamsWithMissing.length) {
+    alert('Nenhuma figurinha faltando no momento.');
+    return;
+  }
+  selectedMissingTeamFilters = new Set(teamsWithMissing);
+  pendingMissingTeamFilters = new Set(teamsWithMissing);
+  saveTeamFilter('missing');
+  updateTeamFilterButton('missing');
+  applyFilters();
+  switchView('missingView');
+}
+
+function showDuplicateTeams(){
+  const teamsWithDupes = ALL_TEAMS.filter(team => getDuplicateTeamCount(team) > 0);
+  if (!teamsWithDupes.length) {
+    alert('Ainda não há figurinhas repetidas registradas.');
+    return;
+  }
+  selectedDuplicateTeamFilters = new Set(teamsWithDupes);
+  pendingDuplicateTeamFilters = new Set(teamsWithDupes);
+  saveTeamFilter('duplicate');
+  updateTeamFilterButton('duplicate');
+  applyFilters();
+  switchView('duplicatesView');
+}
+
+function showAlbumTeams(){
+  const teamsWithAlbums = ALL_TEAMS.filter(team => {
+    const lim = getStickerLimits(team);
+    const totalTeam = lim.max - lim.min + 1;
+    const missingCount = missing[team] ? missing[team].length : 0;
+    return totalTeam - missingCount > 0;
+  });
+  if (!teamsWithAlbums.length) {
+    alert('Ainda não há figurinhas coladas no álbum.');
+    return;
+  }
+  selectedAlbumTeamFilters = new Set(teamsWithAlbums);
+  pendingAlbumTeamFilters = new Set(teamsWithAlbums);
+  saveTeamFilter('album');
+  updateTeamFilterButton('album');
+  renderAlbumView();
+  switchView('albumView');
+}
+
+function showCompletedTeams(){
+  const completeTeams = ALL_TEAMS.filter(team => !missing[team] || missing[team].length === 0);
+  const container = document.getElementById('completedTeamsList');
+  if (!container) return;
+  if (!completeTeams.length) {
+    container.innerHTML = '<div class="empty">Nenhum time completo ainda.</div>';
+  } else {
+    container.innerHTML = completeTeams.map(team => `
+      <div class="album-team">
+        <div class="album-team-header">${getTeamFlag(team)} ${team} - ${getTeamName(team)}</div>
+      </div>
+    `).join('');
+  }
+  switchView('completedView');
+}
+
 function populateTeamFilter(filterType){
-  const menuId = filterType === 'duplicate' ? 'dupFilterMenu' : 'teamFilterMenu';
+  const menuId = filterType === 'duplicate'
+    ? 'dupFilterMenu'
+    : filterType === 'album'
+      ? 'albumFilterMenu'
+      : 'teamFilterMenu';
   const menu = document.getElementById(menuId);
   if (!menu) return;
 
@@ -1446,6 +1715,7 @@ function populateTeamFilter(filterType){
     state.setSelected(new Set(state.pending));
     saveTeamFilter(filterType);
     applyFilters();
+    if (filterType === 'album') renderAlbumView();
     toggleTeamFilterMenu(filterType);
   });
 
@@ -1472,7 +1742,11 @@ function populateTeamFilter(filterType){
 }
 
 function toggleTeamFilterMenu(filterType){
-  const menuId = filterType === 'duplicate' ? 'dupFilterMenu' : 'teamFilterMenu';
+  const menuId = filterType === 'duplicate'
+    ? 'dupFilterMenu'
+    : filterType === 'album'
+      ? 'albumFilterMenu'
+      : 'teamFilterMenu';
   const menu = document.getElementById(menuId);
   if (!menu) return;
 
@@ -1485,9 +1759,17 @@ function toggleTeamFilterMenu(filterType){
 }
 
 function updateTeamFilterButton(filterType){
-  const buttonId = filterType === 'duplicate' ? 'dupFilterBtn' : 'teamFilterBtn';
+  const buttonId = filterType === 'duplicate'
+    ? 'dupFilterBtn'
+    : filterType === 'album'
+      ? 'albumFilterBtn'
+      : 'teamFilterBtn';
   const button = document.getElementById(buttonId);
-  const selected = filterType === 'duplicate' ? selectedDuplicateTeamFilters : selectedMissingTeamFilters;
+  const selected = filterType === 'duplicate'
+    ? selectedDuplicateTeamFilters
+    : filterType === 'album'
+      ? selectedAlbumTeamFilters
+      : selectedMissingTeamFilters;
   if (!button) return;
   if (selected.size === ALL_TEAMS.length) {
     button.textContent = 'Todos os times ▾';
@@ -1505,13 +1787,25 @@ function updateTeamFilterButton(filterType){
 }
 
 function updateTeamFilterActions(filterType){
-  const menuId = filterType === 'duplicate' ? 'dupFilterMenu' : 'teamFilterMenu';
+  const menuId = filterType === 'duplicate'
+    ? 'dupFilterMenu'
+    : filterType === 'album'
+      ? 'albumFilterMenu'
+      : 'teamFilterMenu';
   const menu = document.getElementById(menuId);
   if (!menu) return;
   const actions = menu.querySelector('.team-dropdown-actions');
   if (!actions) return;
-  const selected = filterType === 'duplicate' ? selectedDuplicateTeamFilters : selectedMissingTeamFilters;
-  const pending = filterType === 'duplicate' ? pendingDuplicateTeamFilters : pendingMissingTeamFilters;
+  const selected = filterType === 'duplicate'
+    ? selectedDuplicateTeamFilters
+    : filterType === 'album'
+      ? selectedAlbumTeamFilters
+      : selectedMissingTeamFilters;
+  const pending = filterType === 'duplicate'
+    ? pendingDuplicateTeamFilters
+    : filterType === 'album'
+      ? pendingAlbumTeamFilters
+      : pendingMissingTeamFilters;
   const same = selected.size === pending.size && [...selected].every(team => pending.has(team));
   actions.classList.toggle('hidden', same);
 }
