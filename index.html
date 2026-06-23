@@ -114,6 +114,46 @@ header{background:linear-gradient(120deg,var(--blue) 0%,#0f5d45 50%,var(--green)
 .field-icon{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;background:rgba(15,127,54,.12);border-radius:8px;font-size:0.95rem;margin-right:8px}
 .team-filter-wrap{margin-bottom:26px}
 .team-dropdown-toggle{text-align:left}
+.album-note{font-size:.9rem;color:#4d4d4d;margin-bottom:14px;padding:10px 14px;background:rgba(254,241,199,.8);border-radius:12px;border:1px solid rgba(246,169,0,.24)}
+.sticker.missing{background:#fff7e6;border-color:#f6a900;color:#893f00;cursor:pointer}
+.sticker.missing:hover{background:#fff1d6}
+.sticker.collected{background:#e9f7ef;border:2px solid #7ac27a;color:#1b5e20}
+.album-stickers{display:grid;grid-template-columns:repeat(auto-fit,minmax(46px,1fr));gap:8px;margin-top:12px}
+.sticker.missing-gray{background:#e8e8e8;border-color:#999;color:#666}
+.sticker.collected-blue{background:#e3f2fd;border-color:#2196F3;color:#1976D2;font-weight:600}
+.album-legend{display:flex;gap:20px;margin-bottom:16px;padding:12px 14px;background:#f5f5f5;border-radius:12px;border:1px solid #ddd}
+.legend-item{display:flex;align-items:center;gap:10px}
+.legend-box{width:24px;height:24px;border-radius:6px;border:2px solid;flex-shrink:0}
+.legend-box.collected-blue{background:#e3f2fd;border-color:#2196F3}
+.legend-box.missing-gray{background:#e8e8e8;border-color:#999}
+.legend-text{font-size:.9rem;color:#555;font-weight:500}
+.album-summary-intro{font-size:.95rem;color:#333;margin-bottom:16px}
+.sticker-confirm-modal{position:fixed;top:0;left:0;right:0;bottom:0;z-index:1000;display:flex;align-items:center;justify-content:center}
+.sticker-confirm-overlay{position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5)}
+.sticker-confirm-box{position:relative;z-index:1001;background:#fff;border-radius:16px;padding:28px;min-width:280px;max-width:380px;box-shadow:0 10px 40px rgba(0,0,0,.3);animation:slideUp .3s ease-out}
+.sticker-confirm-title{font-size:1.3rem;font-weight:700;color:#333;margin-bottom:12px;text-align:center}
+.sticker-confirm-text{font-size:1.1rem;color:#666;text-align:center;margin-bottom:24px;padding:12px;background:#f5f5f5;border-radius:8px}
+.sticker-confirm-buttons{display:flex;gap:12px;justify-content:center}
+.btn-confirm,.btn-cancel{padding:12px 24px;border:none;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-confirm{background:#0f7f36;color:#fff}
+.btn-confirm:hover{background:#0a5c28;transform:translateY(-2px);box-shadow:0 4px 12px rgba(15,127,54,.3)}
+.btn-cancel{background:#e8e8e8;color:#333}
+.btn-cancel:hover{background:#d0d0d0;transform:translateY(-2px)}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.album-summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.album-summary-card{background:#fff;border:1px solid rgba(15,127,54,.16);border-radius:16px;padding:14px;box-shadow:var(--shadow);cursor:pointer;transition:transform .2s,box-shadow .2s}
+.album-summary-card:hover{transform:translateY(-2px);box-shadow:0 12px 26px rgba(0,0,0,.12)}
+.album-summary-card .album-team-header{font-weight:700;color:var(--blue);margin-bottom:8px}
+.album-summary-card .album-team-stats{color:#555}
+.summary-intro{font-size:.95rem;color:#333;margin-bottom:16px}
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px}
+.summary-card{background:#fff;border:1px solid rgba(15,127,54,.12);border-radius:12px;padding:12px;text-align:center;cursor:pointer;transition:transform .2s,box-shadow .2s}
+.summary-card:hover{transform:translateY(-2px);box-shadow:0 8px 16px rgba(0,0,0,.08)}
+.summary-team{font-weight:700;font-size:.95rem;color:var(--blue);margin-bottom:8px}
+.summary-count{font-size:1.2rem;font-weight:700;color:var(--green);margin-bottom:8px}
+.summary-dups{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.dup-sample{position:relative;background:#fff4f4;border:1px solid rgba(229,62,62,.12);padding:6px 10px;border-radius:10px;font-weight:700;color:#b02a2a}
+.dup-sample .dup-badge.small{position:static;margin-left:6px;background:#dc2626;padding:3px 6px;border-radius:8px;font-size:.75rem}
 .complete-team-row{margin-top:14px;padding-top:12px;border-top:1px solid rgba(0,0,0,.05)}
 .complete-team-row label{display:flex;align-items:center;gap:10px;font-size:.95rem;color:#333;cursor:pointer}
 .complete-team-row input[type=checkbox]{width:18px;height:18px;accent-color:var(--green);}
@@ -524,6 +564,17 @@ footer{background:linear-gradient(120deg,var(--blue) 0%,#0a3d7c 60%,var(--green)
     <section id="albumView" class="view-section hidden">
       <div class="panel">
         <div class="panel-header">📘 Meu Álbum</div>
+        <div class="album-note">Toque em uma figurinha faltante para marcá-la como colada.</div>
+        <div class="album-legend">
+          <div class="legend-item"><span>Legenda:</span>
+            <span class="legend-box collected-blue"></span>
+            <span class="legend-text">Coladas (Já no álbum)</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-box missing-gray"></span>
+            <span class="legend-text">Faltantes (não coladas)</span>
+          </div>
+        </div>
         <div class="team-filter-wrap" style="margin-bottom:18px;">
           <label for="albumFilterBtn">Filtrar times no álbum</label>
           <div class="team-dropdown">
@@ -750,20 +801,42 @@ if (!missing) {
    INIT
 ═══════════════════════════════════════════ */
 window.addEventListener('DOMContentLoaded', () => {
-  loadTeamFilters();
-  document.getElementById('lblTotal').textContent = TOTAL;
-  populateTradeSelect();
-  populateTeamFilter('missing');
-  populateTeamFilter('duplicate');
-  populateTeamFilter('album');
-  if (collectorName) {
-    document.getElementById('overlay').classList.add('hidden');
-    applyName(collectorName);
-    render();
-  } else {
-    const ni = document.getElementById('nameInput');
-    ni.focus();
-    ni.addEventListener('keydown', e => { if(e.key==='Enter') startApp(); });
+  try {
+    loadTeamFilters();
+    const lbl = document.getElementById('lblTotal'); if (lbl) lbl.textContent = TOTAL;
+    if (typeof populateTradeSelect === 'function') populateTradeSelect();
+    if (typeof populateTeamFilter === 'function') {
+      populateTeamFilter('missing');
+      populateTeamFilter('duplicate');
+      populateTeamFilter('album');
+    }
+    if (collectorName) {
+      const ov = document.getElementById('overlay'); if (ov) ov.classList.add('hidden');
+      if (typeof applyName === 'function') applyName(collectorName);
+      if (typeof render === 'function') render();
+    } else {
+      const ni = document.getElementById('nameInput');
+      if (ni) {
+        ni.focus();
+        ni.addEventListener('keydown', e => { if(e.key === 'Enter' || e.code === 'Enter' || e.key === 'NumpadEnter') startApp(); });
+      }
+      // Install a single global handler to support different keyboards/browsers (numpad, mobile 'Go', etc.)
+      if (!window.__enterStartInstalled) {
+        window.__enterStartInstalled = true;
+        document.addEventListener('keydown', function enterToStart(e){
+          const ov = document.getElementById('overlay');
+          if (!ov || ov.classList.contains('hidden')) return;
+          const key = e.key || e.code || '';
+          if (key === 'Enter' || key === 'NumpadEnter') {
+            e.preventDefault();
+            try { startApp(); } catch(err) { console.error('startApp error', err); alert('Erro ao iniciar: '+err.message); }
+          }
+        });
+      }
+    }
+  } catch(err) {
+    console.error('Init error', err);
+    alert('Erro na inicialização do app:\n'+(err && err.message ? err.message : err));
   }
   const dupSearch = document.getElementById('duplicatesSearch');
   if (dupSearch) dupSearch.addEventListener('input', () => applyFilters());
@@ -802,18 +875,44 @@ function renderAlbumView(){
   const container = document.getElementById('albumContent');
   if (!container) return;
   const selectedTeams = ALL_TEAMS.filter(team => selectedAlbumTeamFilters.has(team));
+  if (!selectedTeams.length) {
+    const htmlSummary = ALL_TEAMS.map(team => {
+      const lim = getStickerLimits(team);
+      const total = lim.max - lim.min + 1;
+      const missingList = missing[team] || [];
+      const collectedCount = total - missingList.length;
+      return `<div class="album-summary-card" onclick="selectAlbumTeam('${team}')">
+        <div class="album-team-header">${getTeamFlag(team)} ${team}</div>
+        <div class="album-team-stats">${collectedCount}/${total} coladas</div>
+      </div>`;
+    }).join('');
+    container.innerHTML = `
+      <div class="album-summary-intro">Resumo do Meu Álbum: toque em um time para ver as figurinhas coladas.</div>
+      <div class="album-summary-grid">${htmlSummary}</div>
+    `;
+    return;
+  }
+
   const html = selectedTeams.map(team => {
     const lim = getStickerLimits(team);
     const total = lim.max - lim.min + 1;
     const missingList = missing[team] || [];
     const collectedCount = total - missingList.length;
     const progress = total ? Math.round((collectedCount / total) * 100) : 0;
-    const displayMissing = missingList.slice(0, 10).join(', ');
+    const allNumbers = Array.from({ length: total }, (_, idx) => lim.min + idx);
+    const stickerButtons = allNumbers.map(num => {
+      const isMissing = missingList.includes(num);
+      const className = isMissing ? 'sticker missing-gray' : 'sticker collected-blue';
+      const title = isMissing ? `${team} ${num} - faltando` : `${team} ${num} - colada`;
+      const onClick = isMissing ? ` onclick="showConfirmSticker('${team}', ${num})" style="cursor:pointer;"` : '';
+      return `<span class="${className}" title="${title}"${onClick}>${num}</span>`;
+    }).join('');
     return `<div class="album-team">
       <div class="album-team-header">${getTeamFlag(team)} ${team} - ${getTeamName(team)}</div>
       <div class="album-team-stats">${collectedCount}/${total} coladas • ${progress}% completo</div>
       <div class="album-team-bar"><div style="width:${progress}%"></div></div>
-      ${missingList.length ? `<div class="album-team-missing">Faltam: ${displayMissing}${missingList.length > 10 ? ' ...' : ''}</div>` : '<div class="album-team-missing">Time completo!</div>'}
+      <div class="stickers album-stickers">${stickerButtons}</div>
+      <div class="complete-team-row"><label><input type="checkbox" onchange="completeTeam('${team}', this)"> Completar Time</label></div>
     </div>`;
   }).join('');
   container.innerHTML = html || '<div class="empty">Nenhum time selecionado para exibir.</div>';
@@ -893,20 +992,35 @@ function importBackupFromText(){
 }
 
 function startApp(){
-  const v = document.getElementById('nameInput').value.trim();
-  if (!v){ document.getElementById('nameInput').focus(); return; }
-  collectorName = v;
-  localStorage.setItem('collectorName', collectorName);
-  document.getElementById('overlay').classList.add('hidden');
-  
-  if(!localStorage.getItem('missing')) {
-    missing = generateCleanMissing();
-    duplicates = {};
-    save();
+  try {
+    console.log('startApp called');
+    const ni = document.getElementById('nameInput');
+    const v = ni ? (ni.value||'').trim() : '';
+    if (!v){ if (ni) ni.focus(); else console.warn('nameInput not found'); return; }
+    collectorName = v;
+    try { localStorage.setItem('collectorName', collectorName); } catch(e){ console.warn('Could not save collectorName', e); }
+    const ov = document.getElementById('overlay');
+    if (ov) {
+      ov.classList.add('hidden');
+      // Fallback in case CSS is overridden
+      try { ov.style.display = 'none'; ov.setAttribute('aria-hidden','true'); } catch(e){}
+      console.log('overlay hidden');
+    } else {
+      console.warn('overlay element not found');
+    }
+
+    if(!localStorage.getItem('missing')) {
+      missing = generateCleanMissing();
+      duplicates = {};
+      save();
+    }
+
+    if (typeof applyName === 'function') applyName(collectorName);
+    if (typeof render === 'function') render();
+  } catch(err) {
+    console.error('startApp error', err);
+    alert('Erro ao iniciar o app: '+(err && err.message ? err.message : err));
   }
-  
-  applyName(collectorName);
-  render();
 }
 
 function applyName(name){
@@ -939,11 +1053,9 @@ function render(){
       mHtml += `<div class="team" data-team="${t}">
         <div class="team-title">${getTeamFlag(t)} ${t} - ${getTeamName(t)}</div>
         <div class="stickers">
-          ${missing[t].sort((a,b)=>a-b).map(n => {
-            const key = `${t}|${n}`;
-            const selected = selectedMissing.has(key) ? ' selected' : '';
-            return `<span class="sticker missing${selected}" title="Clique para selecionar ${t} ${n}" onclick="toggleMissingSelection('${t}',${n})">${n}</span>`;
-          }).join('')}
+          ${missing[t].sort((a,b)=>a-b).map(n => `
+            <span class="sticker missing" title="Clique para marcar ${t} ${n} como colada" onclick="showConfirmSticker('${t}',${n})">${n}</span>
+          `).join('')}
         </div>
         <div class="complete-team-row"><label><input type="checkbox" onchange="completeTeam('${t}', this)"> Completar Time</label></div>
       </div>`;
@@ -962,8 +1074,53 @@ function render(){
     }
   });
 
-  if (!mHtml) mHtml = '<div class="empty">🎉 Nenhuma figurinha faltando!</div>';
-  if (!dHtml) dHtml = '<div class="empty">Nenhuma repetida ainda.</div>';
+  // Se nenhum time selecionado em Faltantes, mostra resumo
+  if (selectedMissingTeamFilters.size === 0) {
+    const missingSummary = ALL_TEAMS.map(team => {
+      const count = missing[team] ? missing[team].length : 0;
+      if (count === 0) return null;
+      const lim = getStickerLimits(team);
+      const total = lim.max - lim.min + 1;
+      return `<div class="summary-card" onclick="selectMissingTeam('${team}')">
+        <div class="summary-team">${getTeamFlag(team)} ${team}</div>
+        <div class="summary-count">${count}/${total}</div>
+      </div>`;
+    }).filter(x => x).join('');
+    
+    if (missingSummary && !mHtml) {
+      mHtml = `<div class="summary-intro">Figurinhas faltantes por time:</div><div class="summary-grid">${missingSummary}</div>`;
+    } else if (!mHtml) {
+      mHtml = '<div class="empty">🎉 Nenhuma figurinha faltando!</div>';
+    }
+  } else if (!mHtml) {
+    mHtml = '<div class="empty">🎉 Nenhuma figurinha faltando!</div>';
+  }
+
+  // Se nenhum time selecionado em Repetidas, mostra resumo
+  if (selectedDuplicateTeamFilters.size === 0) {
+    const duplicateSummary = ALL_TEAMS.map(team => {
+      if (!duplicates[team] || Object.keys(duplicates[team]).length === 0) return null;
+      const count = Object.values(duplicates[team]).reduce((sum, value) => sum + value, 0);
+      const entries = Object.keys(duplicates[team]).sort((a,b)=>a-b);
+      const samples = entries.slice(0,4).map(n => {
+        const c = duplicates[team][n];
+        return `<span class="dup-sample"><span class="dup-num">${n}</span><span class="dup-badge small">${c}</span></span>`;
+      }).join('');
+      return `<div class="summary-card" onclick="selectDuplicateTeam('${team}')">
+        <div class="summary-team">${getTeamFlag(team)} ${team}</div>
+        <div class="summary-count">${count}</div>
+        <div class="summary-dups">${samples}</div>
+      </div>`;
+    }).filter(x => x).join('');
+    
+    if (duplicateSummary && !dHtml) {
+      dHtml = `<div class="summary-intro">Figurinhas repetidas por time:</div><div class="summary-grid">${duplicateSummary}</div>`;
+    } else if (!dHtml) {
+      dHtml = '<div class="empty">Nenhuma repetida ainda.</div>';
+    }
+  } else if (!dHtml) {
+    dHtml = '<div class="empty">Nenhuma repetida ainda.</div>';
+  }
 
   document.getElementById('missing').innerHTML    = mHtml;
   document.getElementById('duplicates').innerHTML = dHtml;
@@ -1044,6 +1201,54 @@ function completeTeam(team, checkbox){
     'Sim, completar',
     () => { checkbox.checked = false; }
   );
+}
+
+function markAsCollected(team, num){
+  if (!missing[team]) return;
+  missing[team] = missing[team].filter(x => x !== num);
+  if (!missing[team].length) delete missing[team];
+  undo = { team, num };
+  save();
+  render();
+  if (!document.getElementById('albumView').classList.contains('hidden')) {
+    renderAlbumView();
+  }
+}
+
+function showConfirmSticker(team, num){
+  const modal = document.createElement('div');
+  modal.id = 'stickerConfirmModal';
+  modal.className = 'sticker-confirm-modal';
+  modal.innerHTML = `
+    <div class="sticker-confirm-overlay" onclick="closeStickerConfirm()"></div>
+    <div class="sticker-confirm-box">
+      <div class="sticker-confirm-title">Colar figurinha?</div>
+      <div class="sticker-confirm-text">${team} nº ${num}</div>
+      <div class="sticker-confirm-buttons">
+        <button onclick="confirmCollectSticker('${team}', ${num})" class="btn-confirm">✓ Sim</button>
+        <button onclick="closeStickerConfirm()" class="btn-cancel">✕ Cancelar</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+function closeStickerConfirm(){
+  const modal = document.getElementById('stickerConfirmModal');
+  if (modal) modal.remove();
+}
+
+function confirmCollectSticker(team, num){
+  markAsCollected(team, num);
+  closeStickerConfirm();
+}
+
+function selectAlbumTeam(team){
+  selectedAlbumTeamFilters = new Set([team]);
+  pendingAlbumTeamFilters = new Set(selectedAlbumTeamFilters);
+  saveTeamFilter('album');
+  updateTeamFilterButton('album');
+  renderAlbumView();
 }
 
 function showGoalPopup(team){
@@ -1605,6 +1810,20 @@ function showDuplicateTeams(){
   selectedDuplicateTeamFilters = new Set(teamsWithDupes);
   pendingDuplicateTeamFilters = new Set(teamsWithDupes);
   saveTeamFilter('duplicate');
+
+  function selectMissingTeam(team){
+    selectedMissingTeamFilters.clear();
+    selectedMissingTeamFilters.add(team);
+    saveTeamFilter('missing');
+    applyFilters();
+  }
+
+  function selectDuplicateTeam(team){
+    selectedDuplicateTeamFilters.clear();
+    selectedDuplicateTeamFilters.add(team);
+    saveTeamFilter('duplicate');
+    applyFilters();
+  }
   updateTeamFilterButton('duplicate');
   applyFilters();
   switchView('duplicatesView');
