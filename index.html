@@ -193,6 +193,11 @@ header{background:linear-gradient(120deg,var(--blue) 0%,#0f5d45 50%,var(--green)
   .stickers{grid-template-columns:repeat(auto-fit,minmax(48px,1fr));gap:8px}
   .team{padding:14px 12px}
   .panel-header{flex-wrap:wrap}
+  .backup-grid{grid-template-columns:1fr}
+  .backup-card{padding:16px}
+  #backupText{width:100%;min-height:180px;max-width:100%}
+  .backup-actions{flex-direction:column;align-items:stretch}
+  .backup-actions input[type=file], .backup-actions button{width:100%}
 }
 @media(max-width:520px){
   header{padding-bottom:12px}
@@ -281,7 +286,7 @@ header{background:linear-gradient(120deg,var(--blue) 0%,#0f5d45 50%,var(--green)
 .album-team-bar div{height:100%;background:linear-gradient(90deg,var(--blue),var(--green),var(--yellow));border-radius:999px}
 .album-team-missing{font-size:.85rem;color:#555}
 @media(max-width:900px){.backup-grid{grid-template-columns:1fr}}
-@media(max-width:680px){.bottom-nav{grid-template-columns:repeat(3,1fr);overflow-x:auto;padding:12px 6px} .nav-item{font-size:.78rem;padding:10px 6px} }
+@media(max-width:680px){.bottom-nav{grid-template-columns:repeat(3,1fr);overflow-x:auto;padding:12px 6px} .nav-item{font-size:.78rem;padding:10px 6px}}
 
 /* FOOTER */
 footer{background:linear-gradient(120deg,var(--blue) 0%,#0a3d7c 60%,var(--green) 100%);margin-top:40px;padding:26px 18px;text-align:center}
