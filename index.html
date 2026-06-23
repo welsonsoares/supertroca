@@ -2242,7 +2242,7 @@
   <div id="overlay" class="modal-backdrop">
     <div class="modal">
       <div class="modal-badge">🏆</div>
-      <h2>Super Troca de Cromos</h2>
+      <h2>Super Troca PRO</h2>
       <p>Copa do Mundo 2026<br>Qual é o seu nome, colecionador?</p>
       <input id="nameInput" type="text" placeholder="Digite seu nome..." maxlength="30" autocomplete="off">
       <button class="btn btn-green" style="width:100%;padding:13px;font-size:1rem" onclick="startApp()">Começar
@@ -2376,7 +2376,7 @@
   <header>
     <div class="header-inner">
       <div class="header-left">
-        <h1><span class="brand-mark"><img src="icon.png" alt="Ícone do sistema"></span> Super Troca de Cromos</h1>
+        <h1><span class="brand-mark"><img src="icon.png" alt="Ícone do sistema"></span> Super Troca PRO</h1>
         <div class="subtitle">Álbum Copa do Mundo 2026</div>
       </div>
       <div class="collector-badge" onclick="editName()" title="Clique para editar seu nome">
@@ -3607,7 +3607,7 @@
 
     function share() {
       const name = collectorName || 'Colecionador';
-      let txt = `🏆 Super Troca de Cromos – ${name}\nÁlbum Copa do Mundo 2026\n\n`;
+      let txt = `🏆 Super Troca PRO – ${name}\nÁlbum Copa do Mundo 2026\n\n`;
       txt += '❌ FALTANTES\n';
       ALL_TEAMS.forEach(t => {
         if (missing[t] && missing[t].length > 0) txt += `${t}: ${missing[t].join(', ')}\n`;
