@@ -2271,6 +2271,145 @@
       border-radius: 999px;
       line-height: 1;
     }
+
+.scanner-modal{
+  width:95%;
+  max-width:500px;
+  padding:20px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+
+.scanner-help{
+  font-size:.9rem;
+  text-align:center;
+}
+
+.scanner-camera-container{
+  position:relative;
+  width:100%;
+  aspect-ratio:16/9;
+  overflow:hidden;
+  border-radius:12px;
+  background:#000;
+}
+
+#cameraVideo{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
+.scanner-overlay{
+  position:absolute;
+  inset:0;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  pointer-events:none;
+}
+
+.scanner-target{
+  position:relative;
+  width:45%;
+  height:15%;
+  border:3px solid #00ff88;
+  border-radius:12px;
+  box-shadow:
+    0 0 0 9999px rgba(0,0,0,.45),
+    inset 0 0 15px rgba(0,255,136,.4);
+}
+
+.scanner-line{
+  position:absolute;
+  left:0;
+  top:50%;
+  width:100%;
+  height:2px;
+  background:#00ff88;
+  transform:translateY(-50%);
+}
+
+.corner{
+  position:absolute;
+  width:18px;
+  height:18px;
+}
+
+.tl{
+  top:-6px;
+  left:-6px;
+  border-top:4px solid #fff;
+  border-left:4px solid #fff;
+}
+
+.tr{
+  top:-6px;
+  right:-6px;
+  border-top:4px solid #fff;
+  border-right:4px solid #fff;
+}
+
+.bl{
+  bottom:-6px;
+  left:-6px;
+  border-bottom:4px solid #fff;
+  border-left:4px solid #fff;
+}
+
+.br{
+  bottom:-6px;
+  right:-6px;
+  border-bottom:4px solid #fff;
+  border-right:4px solid #fff;
+}
+
+.scanner-feedback{
+  min-height:24px;
+  text-align:center;
+  font-weight:700;
+}
+
+.scanner-buttons{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+.scanner-btn-capture{
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:8px;
+  font-weight:bold;
+  background:#f9c319;
+  color:#000;
+  cursor:pointer;
+}
+
+.scanner-btn-close{
+  width:100%;
+  padding:12px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+@media (max-width:600px){
+
+  .scanner-target{
+    width:55%;
+    height:18%;
+  }
+
+  .scanner-modal{
+    width:98%;
+    padding:15px;
+  }
+
+}
+    
   </style>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <script src="sticker_map.js"></script>
@@ -3877,108 +4016,7 @@ function playBeep() {
     //Final Código do Scanner
   </script>
 
-  <div id="cameraModal" class="modal-backdrop hidden">
-  <div class="modal" style="position: relative; max-width: 440px; padding: 20px;">
-    <h2>📷 Scanner de Alta Precisão</h2>
-    <p style="margin-bottom:12px;font-size:.9rem;">
-Centralize o código do verso da figurinha dentro da área verde.
-O scanner identifica códigos como:
-<strong>IRQ 20</strong>,
-<strong>FWC 12</strong>,
-<strong>BRA 1</strong>.
-</p>
-    
-    <div style="position: relative; background: #000; border-radius: 12px; overflow: hidden; margin-bottom: 16px; aspect-ratio: 16/9; box-shadow: inset 0 0 20px rgba(0,0,0,0.8);">
-      
-      <video id="cameraVideo" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
-      
-      <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; pointer-events: none;">
-        <div style="position: absolute; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.45);"></div>
-        
-        <div id="scannerTarget"
-     style="
-       position: relative;
-       width: 45%;
-       height: 15%;
-       background: transparent;
-       border: 3px solid #00ff88;
-       border-radius: 12px;
-       box-shadow:
-         0 0 0 9999px rgba(0,0,0,.45),
-         inset 0 0 15px rgba(0,255,136,.45),
-         0 0 20px rgba(0,255,136,.6);
-       z-index: 2;">
-
-  <div style="
-       position:absolute;
-       top:-6px;
-       left:-6px;
-       width:18px;
-       height:18px;
-       border-top:4px solid #fff;
-       border-left:4px solid #fff;">
-  </div>
-
-  <div style="
-       position:absolute;
-       top:-6px;
-       right:-6px;
-       width:18px;
-       height:18px;
-       border-top:4px solid #fff;
-       border-right:4px solid #fff;">
-  </div>
-
-  <div style="
-       position:absolute;
-       bottom:-6px;
-       left:-6px;
-       width:18px;
-       height:18px;
-       border-bottom:4px solid #fff;
-       border-left:4px solid #fff;">
-  </div>
-
-  <div style="
-       position:absolute;
-       bottom:-6px;
-       right:-6px;
-       width:18px;
-       height:18px;
-       border-bottom:4px solid #fff;
-       border-right:4px solid #fff;">
-  </div>
-
-  <!-- Linha central -->
-
-  <div style="
-       position:absolute;
-       left:0;
-       top:50%;
-       width:100%;
-       height:2px;
-       background:#00ff88;
-       transform:translateY(-50%);
-       opacity:.75;">
-  </div>
-
-</div>
-
-    <canvas id="ocrCanvas" style="display: none;"></canvas>
-
-    <div id="scannerFeedback" style="font-weight: 700; font-size: 0.95rem; margin-bottom: 16px; color: var(--blue); text-align: center; min-height: 24px;">
-      Câmera pronta...
-    </div>
-    
-    <button id="btnTriggerCapture" class="btn" style="width: 100%; background-color: #f9c319; color: #000; font-weight: bold; margin-bottom: 8px; padding: 12px; font-size: 1rem; border-radius: 8px; border: none; cursor: pointer;">
-      📸 Iniciar Captura
-    </button>
-    
-    <button id="btnCloseCamera" class="btn btn-sm btn-cancel" style="width: 100%;">
-      Fechar Câmera
-    </button>
-  </div>
-</div>
+  
   
 <style>
 @keyframes scanAnim {
@@ -3996,5 +4034,62 @@ O scanner identifica códigos como:
 }
 </style>
 
+  <div id="cameraModal" class="modal-backdrop hidden">
+
+  <div class="modal scanner-modal">
+
+    <h2>📷 Scanner de Figurinhas</h2>
+
+    <p class="scanner-help">
+      Centralize o código do verso da figurinha dentro da área verde.
+    </p>
+
+    <div class="scanner-camera-container">
+
+      <video
+        id="cameraVideo"
+        autoplay
+        playsinline>
+      </video>
+
+      <div class="scanner-overlay">
+
+        <div id="scannerTarget" class="scanner-target">
+
+          <div class="corner tl"></div>
+          <div class="corner tr"></div>
+          <div class="corner bl"></div>
+          <div class="corner br"></div>
+
+          <div class="scanner-line"></div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <canvas id="ocrCanvas" style="display:none;"></canvas>
+
+    <div id="scannerFeedback" class="scanner-feedback">
+      Câmera pronta...
+    </div>
+
+    <div class="scanner-buttons">
+
+      <button id="btnTriggerCapture" class="scanner-btn-capture">
+        📸 Iniciar Captura
+      </button>
+
+      <button id="btnCloseCamera" class="scanner-btn-close">
+        Fechar Câmera
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+  
 </body>
 </html>
