@@ -2272,6 +2272,7 @@
       line-height: 1;
     }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <script src="sticker_map.js"></script>
 </head>
 
@@ -3384,133 +3385,128 @@
         console.log("Função de abrir o scanner não encontrada.");
     }
 });
-  let videoStream = null;
-let scannerInterval = null;
+let videoStream = null;
+let ocrInterval = null;
 let isScanningActive = false;
+let ocrWorker = null;
 
-// Inicializa o Scanner ao clicar no botão
+// Inicializa a IA em segundo plano para ganho de performance
+async function initOCR() {
+  if (!ocrWorker) {
+    ocrWorker = await Tesseract.createWorker('eng'); // Carrega o dicionário básico de caracteres
+  }
+}
+initOCR(); // Executa ao carregar a página
+
 document.getElementById('btnOpenScanner').addEventListener('click', async () => {
   const modal = document.getElementById('cameraModal');
   const video = document.getElementById('cameraVideo');
   const feedback = document.getElementById('scannerFeedback');
   
   modal.classList.remove('hidden');
-  feedback.innerHTML = "💡 Inicializando câmera...";
+  feedback.innerHTML = "💡 Conectando câmera...";
   feedback.style.color = "var(--blue)";
   isScanningActive = true;
 
   if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment", width: {理想: 1280}, height: {理想: 720} }
+        video: { facingMode: "environment", width: { ideal: 640 }, height: { ideal: 480 } }
       });
       
       videoStream = stream;
       video.srcObject = stream;
       video.play();
       
-      feedback.innerHTML = "🔍 Posicione o verso da figurinha na câmera...";
+      feedback.innerHTML = "🔍 Posicione o código (Ex: BRA 12) na linha amarela...";
       
-      // Inicia o loop de varredura ultrarrápida por IA nativa
-      startIAStickerDecoding();
+      // Inicia a leitura rápida por IA baseada na máscara de texto
+      startTextScanner();
       
     } catch (err) {
       console.error("Erro na câmera: ", err);
-      alert("Não foi possível acessar a câmera. Verifique as permissões do navegador.");
+      alert("Permita o acesso à câmera para usar o scanner.");
       fecharCamera();
     }
   } else {
-    alert("Seu navegador não suporta acesso direto à câmera.");
+    alert("Seu navegador não suporta o scanner.");
     fecharCamera();
   }
 });
 
-// Loop Inteligente de Detecção de Imagem (IA Nativa do Dispositivo)
-function startIAStickerDecoding() {
+function startTextScanner() {
   const video = document.getElementById('cameraVideo');
+  const canvas = document.getElementById('ocrCanvas');
   const feedback = document.getElementById('scannerFeedback');
-  
-  // Verifica se o navegador possui a API nativa de IA para códigos de barra/QR codes
-  if (!('BarcodeDetector' in window)) {
-    // Fallback rápido caso seja um navegador antigo sem suporte nativo
-    feedback.innerHTML = "⚠️ API BarcodeDetector ausente. Digite o código ou use navegador atualizado.";
-    return;
-  }
+  const ctx = canvas.getContext('2d');
 
-  // Inicializa o detector focado nos formatos comuns do verso de figurinhas (QR e Barras tradicionais)
-  const barcodeDetector = new BarcodeDetector({ 
-    formats: ['qr_code', 'code_128', 'code_39', 'ean_13', 'ean_8'] 
-  });
+  // Intervalo de processamento veloz (a cada 350ms para dar tempo da IA interpretar)
+  ocrInterval = setInterval(async () => {
+    if (!isScanningActive || video.readyState !== video.HAVE_CURRENT_DATA || !ocrWorker) return;
 
-  // Executa uma checagem rápida a cada 200ms (5 tentativas por segundo -> Leitura em < 1000ms)
-  scannerInterval = setInterval(async () => {
-    if (!isScanningActive || video.readyState !== video.HAVE_CURRENT_DATA) return;
+    // Configura o tamanho do canvas com base no frame do vídeo
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    // Desenha o frame atual do vídeo no canvas
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
     try {
-      const barcodes = await barcodeDetector.detect(video);
-      if (barcodes.length > 0) {
-        // Código encontrado instantaneamente!
-        const scannedText = barcodes[0].rawValue.trim();
-        isScanningActive = false; // Pausa novas leituras para processar
-        clearInterval(scannerInterval);
+      // A IA analisa a imagem gerada pelo frame da câmera
+      const { data: { text } } = await ocrWorker.recognize(canvas);
+      
+      // Tratamento do texto limpo extraído pela IA
+      // Remove espaços extras, quebras de linha e transforma tudo em Letras Maiúsculas
+      let cleanText = text.replace(/[^a-zA-Z0-9\s]/g, '').toUpperCase().trim();
+      
+      // Padroniza o texto garantindo um espaço único entre as letras e números (Ex: "BRA12" vira "BRA 12")
+      cleanText = cleanText.replace(/^([A-Z]{3})(\d{1,2})$/, '$1 $2');
+
+      console.log("Texto detectado pela IA:", cleanText);
+
+      // EXTRUÇÃO DA MÁSCARA EXATA: ^[A-Z]{3}\s?\d{1,2}$
+      // ^[A-Z]{3} -> Começa obrigatoriamente com exatamente 3 letras de A a Z
+      // \s?        -> Pode ou não ter um espaço no meio
+      // \d{1,2}$   -> Termina obrigatoriamente com 1 ou 2 números (0 a 99)
+      const regexMascara = /^[A-Z]{3}\s\d{1,2}$/;
+
+      if (regexMascara.test(cleanText)) {
+        // Encontrou e validou perfeitamente dentro do padrão!
+        isScanningActive = false;
+        clearInterval(ocrInterval);
         
-        processScannedSticker(scannedText);
+        feedback.innerHTML = `✅ Identificado: <strong>${cleanText}</strong>`;
+        feedback.style.color = "var(--green)";
+        
+        playBeep();
+        fecharCamera();
+        
+        // Direciona para a validação de Faltantes vs Repetidas do seu álbum
+        validarFigurinhaScaneada(cleanText);
       }
-    } catch (error) {
-      console.error("Erro na detecção contínua por IA:", error);
+    } catch (ocrError) {
+      console.error("Erro no processamento do frame:", ocrError);
     }
-  }, 200); 
+  }, 350);
 }
 
-// Processamento Regras de Negócio: Faltantes vs Repetidas
-function processScannedSticker(code) {
-  const feedback = document.getElementById('scannerFeedback');
-  
-  // Limpa strings e padroniza para maiúsculo (ex: "BRA 1", "ARG 00")
-  const stickerId = code.toUpperCase().trim();
-  
-  // Regex simples para garantir que a leitura capturou um formato de sigla de seleção + número
-  if (!/^[A-Z]{3}\s?\d+$/.test(stickerId)) {
-    feedback.innerHTML = `❌ Código lido inválido (${stickerId}). Tentando novamente...`;
-    feedback.style.color = "red";
-    // Reinicia o scanner após 1.5s para nova tentativa
-    setTimeout(() => {
-      if(videoStream) {
-        isScanningActive = true;
-        startIAStickerDecoding();
-      }
-    }, 1500);
-    return;
-  }
-
-  feedback.innerHTML = `✅ Lido com sucesso: <strong>${stickerId}</strong>!`;
-  feedback.style.color = "var(--green)";
-  
-  // Toca um bipe sonoro rápido de sucesso (Opcional, usando Audio Context nativo)
-  playBeep();
-
-  // Fecha a câmera imediatamente para dar lugar aos modais de decisão
-  fecharCamera();
-
-  // ----- LOGICA DE VALIDAÇÃO NO ÁLBUM (Adaptado da estrutura original do seu app) -----
-  // Supõe-se que exista a checagem no objeto global do seu álbum (ex: 'album', ou direto via função)
-  
+// Validação no banco de dados do álbum
+function validarFigurinhaScaneada(stickerId) {
+  // Busca quantas unidades você já tem no seu objeto de controle 'album'
   let totalOwned = 0;
   if (typeof album !== 'undefined' && album[stickerId]) {
-    totalOwned = album[stickerId]; // Quantas unidades o usuário já possui
+    totalOwned = album[stickerId];
   }
 
   if (totalOwned === 0) {
-    // 1. É FALTANTE: Avisa e adiciona direto!
+    // CASO 1: Não tem (Faltante) -> Informa e adiciona
     showConfirm(
-      "✨ Figurinha Faltante Encontrada!", 
-      `A figurinha "${stickerId}" não estava no seu álbum. Deseja adicioná-la agora?`, 
+      "✨ Figurinha Faltante!", 
+      `A figurinha "${stickerId}" está FALTANDO no seu álbum. Deseja adicioná-la?`, 
       () => {
-        // Chama a função existente no seu código para adicionar a figurinha
         if (typeof addSticker === "function") {
           addSticker(stickerId); 
         } else {
-          // Fallback manual se a função tiver outro nome
           if(typeof album !== 'undefined') album[stickerId] = 1;
           if(typeof render === 'function') render();
         }
@@ -3519,13 +3515,13 @@ function processScannedSticker(code) {
       'Adicionar ao Álbum'
     );
   } else {
-    // 2. É REPETIDA: Pergunta se deseja adicionar mesmo assim
+    // CASO 2: Repetida -> Pergunta se deseja adicionar mesmo assim
     showConfirm(
       "🔄 Figurinha Repetida!", 
-      `Você já possui a figurinha "${stickerId}" (Possui: ${totalOwned}). Deseja adicioná-la mesmo assim à sua pilha de repetidas?`, 
+      `Você já possui a figurinha "${stickerId}" (Total: ${totalOwned}). Deseja adicioná-la mesmo assim às suas repetidas?`, 
       () => {
         if (typeof addSticker === "function") {
-          addSticker(stickerId); // Adiciona +1 à contagem
+          addSticker(stickerId);
         } else {
           if(typeof album !== 'undefined') album[stickerId] += 1;
           if(typeof render === 'function') render();
@@ -3537,10 +3533,9 @@ function processScannedSticker(code) {
   }
 }
 
-// Fecha o modal e limpa os recursos de hardware do dispositivo
 function fecharCamera() {
   isScanningActive = false;
-  if (scannerInterval) clearInterval(scannerInterval);
+  if (ocrInterval) clearInterval(ocrInterval);
   
   if (videoStream) {
     videoStream.getTracks().forEach(track => track.stop());
@@ -3555,37 +3550,36 @@ function fecharCamera() {
 
 document.getElementById('btnCloseCamera').addEventListener('click', fecharCamera);
 
-// Função auxiliar para emitir um bipe sonoro de confirmação física de escaneamento
 function playBeep() {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = 'sine';
-    osc.frequency.setValueAtTime(880, ctx.currentTime); // Tom agudo agradável
+    osc.frequency.setValueAtTime(900, ctx.currentTime);
     gain.gain.setValueAtTime(0.1, ctx.currentTime);
     osc.connect(gain);
     gain.connect(ctx.destination);
     osc.start();
-    osc.stop(ctx.currentTime + 0.12); // Duração de 120ms
+    osc.stop(ctx.currentTime + 0.1);
   } catch(e) {}
 }
-
   </script>
 
-  <<div id="cameraModal" class="modal-backdrop hidden">
+  <div id="cameraModal" class="modal-backdrop hidden">
   <div class="modal" style="position: relative; max-width: 420px;">
     <h2>📷 Scanner de Código</h2>
-    <p>Aponte para o código de barras/QR no verso da figurinha.</p>
+    <p>Aponte a câmera para o texto impresso no verso (Ex: BRA 5, ARG 00).</p>
     
     <div style="position: relative; background: #000; border-radius: 12px; overflow: hidden; margin-bottom: 16px; aspect-ratio: 4/3;">
       <video id="cameraVideo" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
-      
-      <div id="scannerLine" style="position: absolute; left: 0; right: 0; height: 3px; background: red; top: 0; box-shadow: 0 0 8px red; animation: scanAnim 1.5s linear infinite;"></div>
+      <div id="scannerLine" style="position: absolute; left: 0; right: 0; height: 3px; background: #f9c319; top: 0; box-shadow: 0 0 8px #f9c319; animation: scanAnim 1.5s linear infinite;"></div>
     </div>
 
-    <div id="scannerFeedback" style="font-weight: 600; font-size: 0.95rem; margin-bottom: 12px; color: var(--blue);">
-      Buscando código...
+    <canvas id="ocrCanvas" style="display: none;"></canvas>
+
+    <div id="scannerFeedback" style="font-weight: 600; font-size: 0.95rem; margin-bottom: 12px; color: var(--blue); text-align: center;">
+      Inicializando IA de leitura...
     </div>
     
     <button id="btnCloseCamera" class="btn btn-sm btn-cancel" style="width: 100%;">
@@ -3593,6 +3587,14 @@ function playBeep() {
     </button>
   </div>
 </div>
+
+<style>
+@keyframes scanAnim {
+  0% { top: 0%; }
+  50% { top: 100%; }
+  100% { top: 0%; }
+}
+</style>
 
 <style>
 @keyframes scanAnim {
