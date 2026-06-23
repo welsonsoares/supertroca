@@ -2511,8 +2511,8 @@
             <div class="backup-card">
               <h3>Exportar</h3>
               <p>Salve seu álbum em CSV para preservar seus dados.</p>
-              <button class="btn btn-green" onclick="requestFileAccess('export')">Exportar CSV</button>
-              <button class="btn btn-blue" onclick="requestFileAccess('drive')">Salvar no Google Drive</button>
+              <button class="btn btn-green" onclick="downloadBackupCSV()">Exportar CSV</button>
+              <button class="btn btn-blue" onclick="openGoogleDriveBackup()">Salvar no Google Drive</button>
             </div>
             <div class="backup-card">
               <h3>Importar</h3>
@@ -2520,7 +2520,7 @@
               <textarea id="backupText" placeholder="Cole o CSV de backup aqui..." rows="8"></textarea>
               <div class="backup-actions">
                 <input id="backupFileInput" type="file" accept=".csv,.json" onchange="loadBackupFile(event)">
-                <button class="btn btn-blue" onclick="requestFileAccess('import')">Importar</button>
+                <button class="btn btn-blue" onclick="importBackupFromText()">Importar</button>
               </div>
             </div>
           </div>
@@ -2832,34 +2832,6 @@
     </div>`;
       }).join('');
       container.innerHTML = html || '<div class="empty">Nenhum time selecionado para exibir.</div>';
-    }
-
-    function isMobileDevice() {
-      return /Android|iPhone|iPad|iPod|Mobile|Opera Mini|IEMobile/i.test(navigator.userAgent);
-    }
-
-    function requestFileAccess(action) {
-      const mobile = isMobileDevice();
-      const message = mobile
-        ? 'No celular, o navegador pode pedir permissão para salvar ou abrir arquivos. Toque em "Permitir" ou "Abrir" quando aparecer a solicitação.'
-        : 'O navegador pode pedir permissão para salvar ou abrir arquivos. Continue para prosseguir.';
-      if (mobile) {
-        alert(message);
-      } else {
-        const proceed = confirm(message + '\n\nDeseja continuar?');
-        if (!proceed) return;
-      }
-
-      if (action === 'export') {
-        downloadBackupCSV();
-      } else if (action === 'drive') {
-        openGoogleDriveBackup();
-      } else if (action === 'import') {
-        const input = document.getElementById('backupFileInput');
-        if (input) {
-          input.click();
-        }
-      }
     }
 
     function downloadBackupCSV() {
